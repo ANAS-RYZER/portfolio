@@ -1,0 +1,3880 @@
+From 496a8f94491b95f53c8378ac182fc3b2caeb47f6 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 7 Nov 2026 21:40:57 +0000
+Subject: [PATCH] Redesign portfolio: editorial layout with infinite marquees
+ and parallax
+
+Replace the old multi-page neon theme with a single-page dark editorial
+design: parallax hero, velocity-reactive infinite marquees, parallax
+project showcase, scroll-revealed about text, experience timeline,
+contact form (posts to /api/contact) and a marquee footer.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Eo4UkPo4f5dD2uVySoZsJG
+---
+ app/contact/contact.tsx              | 158 ---------------
+ app/contact/page.tsx                 |  10 -
+ app/experience/experince.tsx         |  82 --------
+ app/experience/page.tsx              |  10 -
+ app/globals.css                      | 292 +++++++--------------------
+ app/layout.tsx                       |  47 +----
+ app/page.tsx                         |  67 +++---
+ app/projects/page.tsx                |  10 -
+ app/projects/project.tsx             | 124 ------------
+ app/resume/page.tsx                  |  10 -
+ app/resume/resume.tsx                | 124 ------------
+ app/skills/page.tsx                  |  11 -
+ app/skills/skills.tsx                | 130 ------------
+ components/active-visitors.tsx       |  56 -----
+ components/contact-form.tsx          | 167 ---------------
+ components/experience-card.tsx       |  88 --------
+ components/footer.tsx                | 121 -----------
+ components/hero-scene.tsx            | 120 -----------
+ components/hero-section.tsx          | 150 --------------
+ components/navigation.tsx            | 172 ----------------
+ components/nurui/electric-cursor.tsx |  96 ---------
+ components/project-card.tsx          | 132 ------------
+ components/project-filters.tsx       |  36 ----
+ components/radial-chart.tsx          |  57 ------
+ components/site/about.tsx            |  68 +++++++
+ components/site/contact.tsx          |  80 ++++++++
+ components/site/experience.tsx       |  62 ++++++
+ components/site/footer.tsx           |  65 ++++++
+ components/site/hero.tsx             |  97 +++++++++
+ components/site/marquee.tsx          |  64 ++++++
+ components/site/nav.tsx              |  95 +++++++++
+ components/site/section-label.tsx    |  10 +
+ components/site/stack.tsx            |  74 +++++++
+ components/site/work.tsx             |  92 +++++++++
+ components/skill-bar.tsx             |  39 ----
+ components/skill-category.tsx        |  50 -----
+ components/tech-carousel.tsx         |  64 ------
+ components/theme-provider.tsx        |  50 -----
+ components/theme-toggle.tsx          |  51 -----
+ components/typing-animation.tsx      |  51 -----
+ package-lock.json                    |  85 ++++----
+ 41 files changed, 883 insertions(+), 2484 deletions(-)
+ delete mode 100644 app/contact/contact.tsx
+ delete mode 100644 app/contact/page.tsx
+ delete mode 100644 app/experience/experince.tsx
+ delete mode 100644 app/experience/page.tsx
+ delete mode 100644 app/projects/page.tsx
+ delete mode 100644 app/projects/project.tsx
+ delete mode 100644 app/resume/page.tsx
+ delete mode 100644 app/resume/resume.tsx
+ delete mode 100644 app/skills/page.tsx
+ delete mode 100644 app/skills/skills.tsx
+ delete mode 100644 components/active-visitors.tsx
+ delete mode 100644 components/contact-form.tsx
+ delete mode 100644 components/experience-card.tsx
+ delete mode 100644 components/footer.tsx
+ delete mode 100644 components/hero-scene.tsx
+ delete mode 100644 components/hero-section.tsx
+ delete mode 100644 components/navigation.tsx
+ delete mode 100644 components/nurui/electric-cursor.tsx
+ delete mode 100644 components/project-card.tsx
+ delete mode 100644 components/project-filters.tsx
+ delete mode 100644 components/radial-chart.tsx
+ create mode 100644 components/site/about.tsx
+ create mode 100644 components/site/contact.tsx
+ create mode 100644 components/site/experience.tsx
+ create mode 100644 components/site/footer.tsx
+ create mode 100644 components/site/hero.tsx
+ create mode 100644 components/site/marquee.tsx
+ create mode 100644 components/site/nav.tsx
+ create mode 100644 components/site/section-label.tsx
+ create mode 100644 components/site/stack.tsx
+ create mode 100644 components/site/work.tsx
+ delete mode 100644 components/skill-bar.tsx
+ delete mode 100644 components/skill-category.tsx
+ delete mode 100644 components/tech-carousel.tsx
+ delete mode 100644 components/theme-provider.tsx
+ delete mode 100644 components/theme-toggle.tsx
+ delete mode 100644 components/typing-animation.tsx
+
+diff --git a/app/contact/contact.tsx b/app/contact/contact.tsx
+deleted file mode 100644
+index 2f185cc..0000000
+--- a/app/contact/contact.tsx
++++ /dev/null
+@@ -1,158 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import { Navigation } from "@/components/navigation"
+-import { Footer } from "@/components/footer"
+-import { ContactForm } from "@/components/contact-form"
+-import { personalInfo } from "@/lib/data"
+-import { Mail, Phone, MapPin, Github, Linkedin, Twitter, MessageSquare, Clock } from "lucide-react"
+-import Link from "next/link"
+-
+-const contactMethods = [
+-  {
+-    icon: Mail,
+-    label: "Email",
+-    value: personalInfo.email,
+-    href: `mailto:${personalInfo.email}`,
+-  },
+-  {
+-    icon: Phone,
+-    label: "Phone",
+-    value: personalInfo.phone,
+-    href: `tel:${personalInfo.phone}`,
+-  },
+-  {
+-    icon: MapPin,
+-    label: "Location",
+-    value: personalInfo.location,
+-    href: null,
+-  },
+-]
+-
+-const socialLinks = [
+-  { icon: Github, href: personalInfo.social.github, label: "GitHub" },
+-  { icon: Linkedin, href: personalInfo.social.linkedin, label: "LinkedIn" },
+-]
+-
+-export default function ContactPage() {
+-  return (
+-    <main className="min-h-screen flex flex-col">
+-      <Navigation />
+-
+-      <section className="pt-32 pb-20 px-4 flex-1">
+-        <div className="container mx-auto max-w-6xl">
+-          {/* Header */}
+-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
+-            <div className="flex items-center justify-center gap-3 mb-4">
+-              <div className="h-px w-12 bg-primary" />
+-              <span className="text-primary text-sm font-medium uppercase tracking-wider">Contact</span>
+-              <div className="h-px w-12 bg-primary" />
+-            </div>
+-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">
+-              Let's Work <span className="text-primary">Together</span>
+-            </h1>
+-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+-              Have a project in mind? I'd love to hear about it. Send me a message and let's create something amazing
+-              together.
+-            </p>
+-          </motion.div>
+-
+-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+-            {/* Contact Info Sidebar */}
+-            <motion.div
+-              initial={{ opacity: 0, x: -20 }}
+-              animate={{ opacity: 1, x: 0 }}
+-              transition={{ delay: 0.1 }}
+-              className="lg:col-span-2 space-y-6"
+-            >
+-              {/* Contact Methods */}
+-              <div className="glass-card p-6 rounded-xl">
+-                <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+-                  <MessageSquare className="h-5 w-5 text-primary" />
+-                  Get in Touch
+-                </h2>
+-                <div className="space-y-4">
+-                  {contactMethods.map((method) => (
+-                    <div key={method.label}>
+-                      {method.href ? (
+-                        <Link
+-                          href={method.href}
+-                          className="flex items-center gap-4 p-3 rounded-lg hover:bg-secondary/50 transition-colors group"
+-                        >
+-                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+-                            <method.icon className="h-5 w-5 text-primary" />
+-                          </div>
+-                          <div>
+-                            <p className="text-sm text-muted-foreground">{method.label}</p>
+-                            <p className="text-foreground font-medium">{method.value}</p>
+-                          </div>
+-                        </Link>
+-                      ) : (
+-                        <div className="flex items-center gap-4 p-3">
+-                          <div className="p-2 rounded-lg bg-primary/10">
+-                            <method.icon className="h-5 w-5 text-primary" />
+-                          </div>
+-                          <div>
+-                            <p className="text-sm text-muted-foreground">{method.label}</p>
+-                            <p className="text-foreground font-medium">{method.value}</p>
+-                          </div>
+-                        </div>
+-                      )}
+-                    </div>
+-                  ))}
+-                </div>
+-              </div>
+-
+-              {/* Availability */}
+-              <div className="glass-card p-6 rounded-xl">
+-                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+-                  <Clock className="h-5 w-5 text-primary" />
+-                  Availability
+-                </h2>
+-                <div className="flex items-center gap-3">
+-                  <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+-                  <span className="text-foreground">Available for new projects</span>
+-                </div>
+-                <p className="text-sm text-muted-foreground mt-2">I typically respond within 24-48 hours.</p>
+-              </div>
+-
+-              {/* Social Links */}
+-              <div className="glass-card p-6 rounded-xl">
+-                <h2 className="text-lg font-semibold text-foreground mb-4">Connect With Me</h2>
+-                <div className="flex gap-3">
+-                  {socialLinks.map((social) => (
+-                    <Link
+-                      key={social.label}
+-                      href={social.href}
+-                      target="_blank"
+-                      rel="noopener noreferrer"
+-                      className="p-3 rounded-lg bg-secondary/50 hover:bg-primary/20 hover:text-primary transition-colors"
+-                      aria-label={social.label}
+-                    >
+-                      <social.icon className="h-5 w-5" />
+-                    </Link>
+-                  ))}
+-                </div>
+-              </div>
+-            </motion.div>
+-
+-            {/* Contact Form */}
+-            <motion.div
+-              initial={{ opacity: 0, x: 20 }}
+-              animate={{ opacity: 1, x: 0 }}
+-              transition={{ delay: 0.2 }}
+-              className="lg:col-span-3"
+-            >
+-              <div className="glass-card p-8 rounded-xl">
+-                <h2 className="text-2xl font-bold text-foreground mb-6">Send a Message</h2>
+-                <ContactForm />
+-              </div>
+-            </motion.div>
+-          </div>
+-        </div>
+-      </section>
+-
+-      {/* <Footer /> */}
+-    </main>
+-  )
+-}
+diff --git a/app/contact/page.tsx b/app/contact/page.tsx
+deleted file mode 100644
+index 3faed75..0000000
+--- a/app/contact/page.tsx
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import React from 'react'
+-import ContactPage from '@/app/contact/contact'
+-
+-const page = () => {
+-  return (
+-    <ContactPage/>
+-  )
+-}
+-
+-export default page
+\ No newline at end of file
+diff --git a/app/experience/experince.tsx b/app/experience/experince.tsx
+deleted file mode 100644
+index e37d000..0000000
+--- a/app/experience/experince.tsx
++++ /dev/null
+@@ -1,82 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import { Navigation } from "@/components/navigation"
+-import { Footer } from "@/components/footer"
+-import { ExperienceCard } from "@/components/experience-card"
+-import { experiences } from "@/lib/data"
+-import { Download } from "lucide-react"
+-import { Button } from "@/components/ui/button"
+-import Link from "next/link"
+-
+-export default function ExperiencePage() {
+-  return (
+-    <main className="min-h-screen flex flex-col">
+-      <Navigation />
+-
+-      <section className="pt-32 pb-20 px-4 flex-1">
+-        <div className="container mx-auto max-w-4xl">
+-          {/* Header */}
+-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+-            <div className="flex items-center gap-3 mb-4">
+-              <div className="h-px w-12 bg-primary" />
+-              <span className="text-primary text-sm font-medium uppercase tracking-wider">Career</span>
+-            </div>
+-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+-              <div>
+-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">
+-                  Work <span className="text-primary">Experience</span>
+-                </h1>
+-                <p className="text-lg text-muted-foreground max-w-2xl">
+-                  My professional journey building web applications and delivering impactful solutions.
+-                </p>
+-              </div>
+-              <Link href="/resume">
+-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+-                  <Download className="mr-2 h-4 w-4" />
+-                  Download Resume
+-                </Button>
+-              </Link>
+-            </div>
+-          </motion.div>
+-
+-          {/* Timeline */}
+-          <div className="relative">
+-            {experiences.map((experience, index) => (
+-              <ExperienceCard
+-                key={experience.id}
+-                experience={experience}
+-                index={index}
+-                isLast={index === experiences.length - 1}
+-              />
+-            ))}
+-          </div>
+-
+-          {/* Summary Stats */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.5 }}
+-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12"
+-          >
+-            {[
+-              { label: "Years Experience", value: "1+" },
+-              { label: "Projects Delivered", value: "15+" },
+-              { label: "Companies", value: "1" },
+-              { label: "Technologies", value: "20+" },
+-            ].map((stat) => (
+-              <div key={stat.label} className="glass-card p-4 rounded-xl text-center">
+-                <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
+-                <div className="text-xs text-muted-foreground">{stat.label}</div>
+-              </div>
+-            ))}
+-          </motion.div>
+-
+-     
+-        </div>
+-      </section>
+-
+-      {/* <Footer /> */}
+-    </main>
+-  )
+-}
+diff --git a/app/experience/page.tsx b/app/experience/page.tsx
+deleted file mode 100644
+index f6dbc1d..0000000
+--- a/app/experience/page.tsx
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import React from 'react'
+-import ProjectsPage from '@/app/projects/project'
+-
+-const page = () => {
+-  return (
+-    <ProjectsPage/>
+-  )
+-}
+-
+-export default page
+\ No newline at end of file
+diff --git a/app/globals.css b/app/globals.css
+index b758091..d811325 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -2,140 +2,50 @@
+ @import "tw-animate-css";
+ 
+ @custom-variant dark (&:is(.dark *));
+-@custom-variant light (&:is(.light *));
+-@custom-variant neon (&:is(.neon *));
+ 
+ :root {
+-  /* Futuristic Dark Theme - Neon Cyan */
+-  --background: oklch(0.08 0.01 240);
+-  --foreground: oklch(0.98 0 0);
+-  --card: oklch(0.12 0.01 240);
+-  --card-foreground: oklch(0.98 0 0);
+-  --popover: oklch(0.1 0.01 240);
+-  --popover-foreground: oklch(0.98 0 0);
+-  --primary: oklch(0.85 0.18 195);
+-  --primary-foreground: oklch(0.1 0.01 240);
+-  --secondary: oklch(0.15 0.01 240);
+-  --secondary-foreground: oklch(0.98 0 0);
+-  --muted: oklch(0.18 0.01 240);
+-  --muted-foreground: oklch(0.6 0 0);
+-  --accent: oklch(0.85 0.18 195);
+-  --accent-foreground: oklch(0.1 0.01 240);
+-  --destructive: oklch(0.577 0.245 27.325);
+-  --destructive-foreground: oklch(0.577 0.245 27.325);
+-  --border: oklch(0.25 0.02 240);
+-  --input: oklch(0.2 0.01 240);
+-  --ring: oklch(0.85 0.18 195);
+-  --chart-1: oklch(0.85 0.18 195);
+-  --chart-2: oklch(0.7 0.15 280);
+-  --chart-3: oklch(0.65 0.2 330);
+-  --chart-4: oklch(0.75 0.15 140);
+-  --chart-5: oklch(0.8 0.18 60);
+-  --radius: 0.75rem;
+-  --sidebar: oklch(0.1 0.01 240);
+-  --sidebar-foreground: oklch(0.98 0 0);
+-  --sidebar-primary: oklch(0.85 0.18 195);
+-  --sidebar-primary-foreground: oklch(0.1 0.01 240);
+-  --sidebar-accent: oklch(0.15 0.01 240);
+-  --sidebar-accent-foreground: oklch(0.98 0 0);
+-  --sidebar-border: oklch(0.25 0.02 240);
+-  --sidebar-ring: oklch(0.85 0.18 195);
+-
+-  /* Custom Neon Colors */
+-  --neon-cyan: oklch(0.85 0.18 195);
+-  --neon-glow: oklch(0.85 0.18 195 / 0.5);
+-  --glass: oklch(0.15 0.01 240 / 0.6);
+-  --glass-border: oklch(0.4 0.02 240 / 0.3);
+-}
+-
+-/* Light Theme */
+-.light {
+-  --background: oklch(0.98 0 0);
+-  --foreground: oklch(0.1 0.01 240);
+-  --card: oklch(1 0 0);
+-  --card-foreground: oklch(0.1 0.01 240);
+-  --popover: oklch(1 0 0);
+-  --popover-foreground: oklch(0.1 0.01 240);
+-  --primary: oklch(0.6 0.2 195);
+-  --primary-foreground: oklch(1 0 0);
+-  --secondary: oklch(0.95 0.01 240);
+-  --secondary-foreground: oklch(0.1 0.01 240);
+-  --muted: oklch(0.92 0.01 240);
+-  --muted-foreground: oklch(0.45 0 0);
+-  --accent: oklch(0.6 0.2 195);
+-  --accent-foreground: oklch(1 0 0);
+-  --border: oklch(0.88 0.01 240);
+-  --input: oklch(0.92 0.01 240);
+-  --ring: oklch(0.6 0.2 195);
+-  --neon-cyan: oklch(0.6 0.2 195);
+-  --neon-glow: oklch(0.6 0.2 195 / 0.3);
+-  --glass: oklch(1 0 0 / 0.8);
+-  --glass-border: oklch(0.8 0.01 240 / 0.5);
+-}
+-
+-/* Neon Theme - Extra vibrant */
+-.neon {
+-  --background: oklch(0.05 0.02 280);
+-  --foreground: oklch(0.98 0 0);
+-  --card: oklch(0.1 0.02 280);
+-  --card-foreground: oklch(0.98 0 0);
+-  --popover: oklch(0.08 0.02 280);
+-  --popover-foreground: oklch(0.98 0 0);
+-  --primary: oklch(0.85 0.25 320);
+-  --primary-foreground: oklch(0.05 0.02 280);
+-  --secondary: oklch(0.15 0.02 280);
+-  --secondary-foreground: oklch(0.98 0 0);
+-  --muted: oklch(0.2 0.02 280);
+-  --muted-foreground: oklch(0.65 0 0);
+-  --accent: oklch(0.8 0.22 180);
+-  --accent-foreground: oklch(0.05 0.02 280);
+-  --border: oklch(0.3 0.03 280);
+-  --input: oklch(0.18 0.02 280);
+-  --ring: oklch(0.85 0.25 320);
+-  --neon-cyan: oklch(0.85 0.25 320);
+-  --neon-glow: oklch(0.85 0.25 320 / 0.6);
+-  --glass: oklch(0.12 0.02 280 / 0.7);
+-  --glass-border: oklch(0.5 0.05 320 / 0.4);
+-}
+-
+-.dark {
+-  --background: oklch(0.08 0.01 240);
+-  --foreground: oklch(0.98 0 0);
+-  --card: oklch(0.12 0.01 240);
+-  --card-foreground: oklch(0.98 0 0);
+-  --popover: oklch(0.1 0.01 240);
+-  --popover-foreground: oklch(0.98 0 0);
+-  --primary: oklch(0.85 0.18 195);
+-  --primary-foreground: oklch(0.1 0.01 240);
+-  --secondary: oklch(0.15 0.01 240);
+-  --secondary-foreground: oklch(0.98 0 0);
+-  --muted: oklch(0.18 0.01 240);
+-  --muted-foreground: oklch(0.6 0 0);
+-  --accent: oklch(0.85 0.18 195);
+-  --accent-foreground: oklch(0.1 0.01 240);
+-  --destructive: oklch(0.396 0.141 25.723);
+-  --destructive-foreground: oklch(0.637 0.237 25.331);
+-  --border: oklch(0.25 0.02 240);
+-  --input: oklch(0.2 0.01 240);
+-  --ring: oklch(0.85 0.18 195);
+-  --chart-1: oklch(0.85 0.18 195);
+-  --chart-2: oklch(0.7 0.15 280);
+-  --chart-3: oklch(0.65 0.2 330);
+-  --chart-4: oklch(0.75 0.15 140);
+-  --chart-5: oklch(0.8 0.18 60);
+-  --sidebar: oklch(0.1 0.01 240);
+-  --sidebar-foreground: oklch(0.98 0 0);
+-  --sidebar-primary: oklch(0.85 0.18 195);
+-  --sidebar-primary-foreground: oklch(0.1 0.01 240);
+-  --sidebar-accent: oklch(0.15 0.01 240);
+-  --sidebar-accent-foreground: oklch(0.98 0 0);
+-  --sidebar-border: oklch(0.25 0.02 240);
+-  --sidebar-ring: oklch(0.85 0.18 195);
++  /* Editorial dark palette */
++  --ink: #0b0b0c;
++  --ink-2: #141416;
++  --ink-3: #1d1d20;
++  --paper: #efece6;
++  --paper-dim: #a3a09a;
++  --line: rgb(239 236 230 / 0.12);
++  --accent: #d4ff3f;
++  --accent-ink: #0b0b0c;
++
++  /* shadcn tokens (used by components/ui) */
++  --background: var(--ink);
++  --foreground: var(--paper);
++  --card: var(--ink-2);
++  --card-foreground: var(--paper);
++  --popover: var(--ink-2);
++  --popover-foreground: var(--paper);
++  --primary: var(--accent);
++  --primary-foreground: var(--accent-ink);
++  --secondary: var(--ink-3);
++  --secondary-foreground: var(--paper);
++  --muted: var(--ink-3);
++  --muted-foreground: var(--paper-dim);
++  --accent-foreground: var(--accent-ink);
++  --destructive: #ff5a4f;
++  --destructive-foreground: #ffffff;
++  --border: var(--line);
++  --input: var(--line);
++  --ring: var(--accent);
++  --radius: 1rem;
+ }
+ 
+ @theme inline {
+-  --font-sans: "Geist", "Geist Fallback";
+-  --font-mono: "Geist Mono", "Geist Mono Fallback";
++  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
++  --font-display: var(--font-display-face), var(--font-body), sans-serif;
++  --color-ink: var(--ink);
++  --color-ink-2: var(--ink-2);
++  --color-ink-3: var(--ink-3);
++  --color-paper: var(--paper);
++  --color-paper-dim: var(--paper-dim);
++  --color-line: var(--line);
++  --color-lime: var(--accent);
+   --color-background: var(--background);
+   --color-foreground: var(--foreground);
+   --color-card: var(--card);
+@@ -155,114 +65,66 @@
+   --color-border: var(--border);
+   --color-input: var(--input);
+   --color-ring: var(--ring);
+-  --color-chart-1: var(--chart-1);
+-  --color-chart-2: var(--chart-2);
+-  --color-chart-3: var(--chart-3);
+-  --color-chart-4: var(--chart-4);
+-  --color-chart-5: var(--chart-5);
+   --radius-sm: calc(var(--radius) - 4px);
+   --radius-md: calc(var(--radius) - 2px);
+   --radius-lg: var(--radius);
+   --radius-xl: calc(var(--radius) + 4px);
+-  --color-sidebar: var(--sidebar);
+-  --color-sidebar-foreground: var(--sidebar-foreground);
+-  --color-sidebar-primary: var(--sidebar-primary);
+-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+-  --color-sidebar-accent: var(--sidebar-accent);
+-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+-  --color-sidebar-border: var(--sidebar-border);
+-  --color-sidebar-ring: var(--sidebar-ring);
+-  --color-neon-cyan: var(--neon-cyan);
+-  --color-neon-glow: var(--neon-glow);
+-  --color-glass: var(--glass);
+-  --color-glass-border: var(--glass-border);
+ }
+ 
+ @layer base {
+   * {
+-    @apply border-border outline-ring/50;
++    @apply border-border;
++  }
++  html {
++    scroll-behavior: smooth;
++    background: var(--ink);
+   }
+   body {
+     @apply bg-background text-foreground;
++    overflow-x: clip;
+   }
+-}
+-
+-/* Glitch Animation */
+-@keyframes glitch {
+-  0% {
+-    text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00;
+-  }
+-  15% {
+-    text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00;
+-  }
+-  16% {
+-    text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.035em 0 #fc00ff, -0.05em -0.05em 0 #fffc00;
+-  }
+-  49% {
+-    text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.035em 0 #fc00ff, -0.05em -0.05em 0 #fffc00;
+-  }
+-  50% {
+-    text-shadow: 0.05em 0.035em 0 #00fffc, 0.03em 0 0 #fc00ff, 0 -0.04em 0 #fffc00;
++  ::selection {
++    background: var(--accent);
++    color: var(--accent-ink);
+   }
+-  99% {
+-    text-shadow: 0.05em 0.035em 0 #00fffc, 0.03em 0 0 #fc00ff, 0 -0.04em 0 #fffc00;
+-  }
+-  100% {
+-    text-shadow: -0.05em 0 0 #00fffc, -0.025em -0.04em 0 #fc00ff, -0.04em -0.025em 0 #fffc00;
+-  }
+-}
+-
+-.glitch-text {
+-  animation: glitch 500ms infinite;
+ }
+ 
+-/* Light mode - disable glitch for readability */
+-.light .glitch-text {
+-  animation: none;
+-  text-shadow: none;
++/* Film grain overlay */
++.grain::after {
++  content: "";
++  position: fixed;
++  inset: -50%;
++  pointer-events: none;
++  z-index: 60;
++  opacity: 0.05;
++  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
++  animation: grain 8s steps(10) infinite;
+ }
+ 
+-/* Neon Glow Effect */
+-.neon-glow {
+-  text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan), 0 0 30px var(--neon-cyan), 0 0 40px
+-    var(--neon-cyan);
++@keyframes grain {
++  0%, 100% { transform: translate(0, 0); }
++  20% { transform: translate(-5%, 4%); }
++  40% { transform: translate(4%, -3%); }
++  60% { transform: translate(-3%, -5%); }
++  80% { transform: translate(5%, 3%); }
+ }
+ 
+-/* Glassmorphism Card */
+-.glass-card {
+-  background: var(--glass);
+-  backdrop-filter: blur(20px);
+-  border: 1px solid var(--glass-border);
++.text-outline {
++  color: transparent;
++  -webkit-text-stroke: 1.5px var(--paper);
+ }
+ 
+-/* Custom Scrollbar */
+-::-webkit-scrollbar {
+-  width: 8px;
++.text-outline-lime {
++  color: transparent;
++  -webkit-text-stroke: 1.5px var(--accent);
+ }
+ 
+-::-webkit-scrollbar-track {
+-  background: var(--background);
+-}
+-
+-::-webkit-scrollbar-thumb {
+-  background: var(--border);
+-  border-radius: 4px;
+-}
++::-webkit-scrollbar { width: 6px; }
++::-webkit-scrollbar-track { background: var(--ink); }
++::-webkit-scrollbar-thumb { background: var(--ink-3); border-radius: 3px; }
++::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+ 
+-::-webkit-scrollbar-thumb:hover {
+-  background: var(--muted-foreground);
+-}
+-
+-/* Print Styles */
+-@media print {
+-  .glass-card {
+-    background: white;
+-    backdrop-filter: none;
+-    border: 1px solid #e5e7eb;
+-  }
+-
+-  body {
+-    background: white;
+-    color: black;
+-  }
++@media (prefers-reduced-motion: reduce) {
++  html { scroll-behavior: auto; }
++  .grain::after { animation: none; }
+ }
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 9e4220d..638e36a 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,49 +1,24 @@
+ import type React from "react"
+ import type { Metadata } from "next"
+-import { Geist, Geist_Mono } from "next/font/google"
++import { Inter, Syne } from "next/font/google"
+ import { Analytics } from "@vercel/analytics/next"
+-import { ThemeProvider } from "@/components/theme-provider"
+-import ElectricCursor from "@/components/nurui/electric-cursor"
+ import "./globals.css"
+ 
+-const _geist = Geist({ subsets: ["latin"] })
+-const _geistMono = Geist_Mono({ subsets: ["latin"] })
++const body = Inter({ subsets: ["latin"], variable: "--font-body" })
++const display = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display-face" })
+ 
+ export const metadata: Metadata = {
+-  title: "Anas Mohamad | Full Stack Developer | Portfolio ",
+-  description: "Full Stack Developer specializing in MERN Stack, Next.js, Real-time Applications, and API Integrations",
+-  icons: {
+-    icon: [
+-      {
+-        url: "/icon.svg",
+-        media: "(prefers-color-scheme: light)",
+-      },
+-      {
+-        url: "/icon.svg",
+-        media: "(prefers-color-scheme: dark)",
+-      },
+-      {
+-        url: "/icon.svg",
+-        type: "image/svg+xml" ,
+-      }, 
+-    ],
+-    apple: "/icon.svg",
+-  },
++  title: "Mohamad Anas | Full Stack Developer",
++  description: "Full Stack Developer specializing in MERN Stack, Next.js, real-time applications, and API integrations",
++  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+ }
+ 
+-export default function RootLayout({
+-  children,
+-}: Readonly<{
+-  children: React.ReactNode
+-}>) {
++export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+   return (
+-    <html lang="en" suppressHydrationWarning>
+-      <body className={`font-sans antialiased`}>
+-        <ThemeProvider>
+-          {children}
+-          <ElectricCursor />
+-          <Analytics />
+-        </ThemeProvider>
++    <html lang="en" className={`${body.variable} ${display.variable}`}>
++      <body className="grain font-sans antialiased">
++        {children}
++        <Analytics />
+       </body>
+     </html>
+   )
+diff --git a/app/page.tsx b/app/page.tsx
+index 2301e5e..c260308 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -1,30 +1,51 @@
+-import { Navigation } from "@/components/navigation"
+-import { HeroSection } from "@/components/hero-section"
+-import { Footer } from "@/components/footer"
+-import Project from "./projects/page"
+-import Skill from "./skills/page"
+-import Experience from "./experience/page"
+-import Contact from "./contact/page"
++import { Nav } from "@/components/site/nav"
++import { Hero } from "@/components/site/hero"
++import { Marquee } from "@/components/site/marquee"
++import { Work } from "@/components/site/work"
++import { About } from "@/components/site/about"
++import { Stack } from "@/components/site/stack"
++import { Experience } from "@/components/site/experience"
++import { Contact } from "@/components/site/contact"
++import { Footer } from "@/components/site/footer"
++
++const services = ["Full Stack Development", "Real-time Systems", "Admin Dashboards", "API Integrations", "MERN + Next.js"]
++
+ export default function Home() {
+   return (
+-    <main className="min-h-screen">
+-      <Navigation />
+-      <section id="home">
+-        <HeroSection />
+-      </section>
+-      <section id="projects">
+-        <Project />
+-      </section>
+-      <section id="skills">
+-        <Skill />
+-      </section>
+-      {/* <section id="experience">
++    <>
++      <Nav />
++      <main>
++        <Hero />
++
++        {/* Tilted infinite ribbons */}
++        <div className="relative z-10 -my-6 py-12">
++          <div className="-rotate-2 bg-lime py-4 text-ink">
++            <Marquee baseVelocity={3}>
++              {services.map((s) => (
++                <span key={s} className="flex items-center font-display text-2xl font-bold uppercase tracking-tight md:text-4xl">
++                  <span className="px-6">{s}</span>✦
++                </span>
++              ))}
++            </Marquee>
++          </div>
++          <div className="absolute inset-x-0 top-1/2 -z-10 -translate-y-1/2 rotate-2 border-y border-line bg-ink-2 py-4">
++            <Marquee baseVelocity={-3}>
++              {services.map((s) => (
++                <span key={s} className="flex items-center font-display text-2xl font-bold uppercase tracking-tight text-paper-dim md:text-4xl">
++                  <span className="px-6">{s}</span>✦
++                </span>
++              ))}
++            </Marquee>
++          </div>
++        </div>
++
++        <Work />
++        <About />
++        <Stack />
+         <Experience />
+-      </section> */}
+-      <section id="contact">
+         <Contact />
+-      </section>
++      </main>
+       <Footer />
+-    </main>
++    </>
+   )
+ }
+diff --git a/app/projects/page.tsx b/app/projects/page.tsx
+deleted file mode 100644
+index f6dbc1d..0000000
+--- a/app/projects/page.tsx
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import React from 'react'
+-import ProjectsPage from '@/app/projects/project'
+-
+-const page = () => {
+-  return (
+-    <ProjectsPage/>
+-  )
+-}
+-
+-export default page
+\ No newline at end of file
+diff --git a/app/projects/project.tsx b/app/projects/project.tsx
+deleted file mode 100644
+index bdf21f1..0000000
+--- a/app/projects/project.tsx
++++ /dev/null
+@@ -1,124 +0,0 @@
+-"use client"
+-
+-import { useState, useMemo } from "react"
+-import { motion } from "framer-motion"
+-import { Navigation } from "@/components/navigation"
+-import { Footer } from "@/components/footer"
+-import { ProjectCard } from "@/components/project-card"
+-import { ProjectFilters } from "@/components/project-filters"
+-import { projects } from "@/lib/data"
+-import { LayoutGrid, List } from "lucide-react"
+-import { Button } from "@/components/ui/button"
+-import { cn } from "@/lib/utils"
+-
+-const categories = ["All", "Real-time", "Web Apps", "Dashboards", "MERN"]
+-
+-export default function   ProjectsPage() {
+-  const [activeCategory, setActiveCategory] = useState("All")
+-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+-
+-  const filteredProjects = useMemo(() => {
+-    if (activeCategory === "All") return projects
+-    return projects.filter((p) => p.category === activeCategory)
+-  }, [activeCategory])
+-
+-  return (
+-    <main className="min-h-screen flex flex-col">
+-      <Navigation />
+-
+-      <section className="pt-32 pb-20 px-4 flex-1">
+-        <div className="container mx-auto">
+-          {/* Header */}
+-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+-            <div className="flex items-center gap-3 mb-4">
+-              <div className="h-px w-12 bg-primary" />
+-              <span className="text-primary text-sm font-medium uppercase tracking-wider">Portfolio</span>
+-            </div>
+-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">
+-              Featured <span className="text-primary">Projects</span>
+-            </h1>
+-            <p className="text-lg text-muted-foreground max-w-2xl">
+-              A collection of projects showcasing my expertise in full-stack development, real-time applications, and
+-              modern web technologies.
+-            </p>
+-          </motion.div>
+-
+-          {/* Filters and View Toggle */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.1 }}
+-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8"
+-          >
+-            <ProjectFilters
+-              categories={categories}
+-              activeCategory={activeCategory}
+-              onCategoryChange={setActiveCategory}
+-            />
+-
+-            <div className="flex items-center gap-2 glass-card p-1 rounded-lg">
+-              <Button
+-                size="icon"
+-                variant="ghost"
+-                onClick={() => setViewMode("grid")}
+-                className={cn("h-8 w-8", viewMode === "grid" && "bg-primary text-primary-foreground")}
+-              >
+-                <LayoutGrid className="h-4 w-4" />
+-              </Button>
+-              <Button
+-                size="icon"
+-                variant="ghost"
+-                onClick={() => setViewMode("list")}
+-                className={cn("h-8 w-8", viewMode === "list" && "bg-primary text-primary-foreground")}
+-              >
+-                <List className="h-4 w-4" />
+-              </Button>
+-            </div>
+-          </motion.div>
+-
+-          {/* Projects Grid */}
+-          <motion.div
+-            layout
+-            className={cn(
+-              "grid gap-6",
+-              viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1",
+-            )}
+-          >
+-            {filteredProjects.map((project, index) => (
+-              <ProjectCard key={project.id} project={project as any} index={index} />
+-            ))}
+-          </motion.div>
+-
+-          {/* Empty State */}
+-          {filteredProjects.length === 0 && (
+-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
+-              <p className="text-muted-foreground text-lg">No projects found in this category.</p>
+-            </motion.div>
+-          )}
+-
+-          {/* Stats Section */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.3 }}
+-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20"
+-          >
+-            {[
+-              { label: "Projects Completed", value: "15+" },
+-              { label: "Technologies Used", value: "20+" },
+-              { label: "Lines of Code", value: "300K+" },
+-              { label: "Happy Clients", value: "3" },
+-            ].map((stat) => (
+-              <div key={stat.label} className="glass-card p-6 rounded-xl text-center">
+-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
+-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+-              </div>
+-            ))}
+-          </motion.div>
+-        </div>
+-      </section>
+-
+-      {/* <Footer /> */}
+-    </main>
+-  )
+-}
+diff --git a/app/resume/page.tsx b/app/resume/page.tsx
+deleted file mode 100644
+index 06a0e7a..0000000
+--- a/app/resume/page.tsx
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import React from 'react'
+-import ResumePage from '@/app/resume/resume'
+-
+-const page = () => {
+-  return (
+-      <ResumePage/>
+-    )
+-}
+-
+-export default page
+\ No newline at end of file
+diff --git a/app/resume/resume.tsx b/app/resume/resume.tsx
+deleted file mode 100644
+index 6c0f733..0000000
+--- a/app/resume/resume.tsx
++++ /dev/null
+@@ -1,124 +0,0 @@
+-"use client"
+-
+-import { useState, useMemo } from "react"
+-import { motion } from "framer-motion"
+-import { Navigation } from "@/components/navigation"
+-import { Footer } from "@/components/footer"
+-import { ProjectCard } from "@/components/project-card"
+-import { ProjectFilters } from "@/components/project-filters"
+-import { projects } from "@/lib/data"
+-import { LayoutGrid, List } from "lucide-react"
+-import { Button } from "@/components/ui/button"
+-import { cn } from "@/lib/utils"
+-
+-const categories = ["All", "Real-time", "Web Apps", "Dashboards", "MERN"]
+-
+-export default function ProjectsPage() {
+-  const [activeCategory, setActiveCategory] = useState("All")
+-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+-
+-  const filteredProjects = useMemo(() => {
+-    if (activeCategory === "All") return projects
+-    return projects.filter((p) => p.category === activeCategory)
+-  }, [activeCategory])
+-
+-  return (
+-    <main className="min-h-screen flex flex-col">
+-      <Navigation />
+-
+-      <section className="pt-32 pb-20 px-4 flex-1">
+-        <div className="container mx-auto">
+-          {/* Header */}
+-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+-            <div className="flex items-center gap-3 mb-4">
+-              <div className="h-px w-12 bg-primary" />
+-              <span className="text-primary text-sm font-medium uppercase tracking-wider">Portfolio</span>
+-            </div>
+-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">
+-              Featured <span className="text-primary">Projects</span>
+-            </h1>
+-            <p className="text-lg text-muted-foreground max-w-2xl">
+-              A collection of projects showcasing my expertise in full-stack development, real-time applications, and
+-              modern web technologies.
+-            </p>
+-          </motion.div>
+-
+-          {/* Filters and View Toggle */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.1 }}
+-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8"
+-          >
+-            <ProjectFilters
+-              categories={categories}
+-              activeCategory={activeCategory}
+-              onCategoryChange={setActiveCategory}
+-            />
+-
+-            <div className="flex items-center gap-2 glass-card p-1 rounded-lg">
+-              <Button
+-                size="icon"
+-                variant="ghost"
+-                onClick={() => setViewMode("grid")}
+-                className={cn("h-8 w-8", viewMode === "grid" && "bg-primary text-primary-foreground")}
+-              >
+-                <LayoutGrid className="h-4 w-4" />
+-              </Button>
+-              <Button
+-                size="icon"
+-                variant="ghost"
+-                onClick={() => setViewMode("list")}
+-                className={cn("h-8 w-8", viewMode === "list" && "bg-primary text-primary-foreground")}
+-              >
+-                <List className="h-4 w-4" />
+-              </Button>
+-            </div>
+-          </motion.div>
+-
+-          {/* Projects Grid */}
+-          <motion.div
+-            layout
+-            className={cn(
+-              "grid gap-6",
+-              viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1",
+-            )}
+-          >
+-            {filteredProjects.map((project, index) => (
+-              <ProjectCard key={project.id} project={project as any} index={index} />
+-            ))}
+-          </motion.div>
+-
+-          {/* Empty State */}
+-          {filteredProjects.length === 0 && (
+-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
+-              <p className="text-muted-foreground text-lg">No projects found in this category.</p>
+-            </motion.div>
+-          )}
+-
+-          {/* Stats Section */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.3 }}
+-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20"
+-          >
+-            {[
+-              { label: "Projects Completed", value: "15+" },
+-              { label: "Technologies Used", value: "20+" },
+-              { label: "Lines of Code", value: "100K+" },
+-              { label: "Happy Clients", value: "10+" },
+-            ].map((stat) => (
+-              <div key={stat.label} className="glass-card p-6 rounded-xl text-center">
+-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
+-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+-              </div>
+-            ))}
+-          </motion.div>
+-        </div>
+-      </section>
+-
+-      <Footer />
+-    </main>
+-  )
+-}
+diff --git a/app/skills/page.tsx b/app/skills/page.tsx
+deleted file mode 100644
+index 87f834e..0000000
+--- a/app/skills/page.tsx
++++ /dev/null
+@@ -1,11 +0,0 @@
+-import React from 'react'
+-import SkillsPage from '@/app/skills/skills'
+-
+-const page = () => {
+-  return (
+- 
+-      <SkillsPage/>
+-  )
+-}
+-
+-export default page
+\ No newline at end of file
+diff --git a/app/skills/skills.tsx b/app/skills/skills.tsx
+deleted file mode 100644
+index c34fcad..0000000
+--- a/app/skills/skills.tsx
++++ /dev/null
+@@ -1,130 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import { Navigation } from "@/components/navigation"
+-import { Footer } from "@/components/footer"
+-import { SkillCategory } from "@/components/skill-category"
+-import { RadialChart } from "@/components/radial-chart"
+-import { skills } from "@/lib/data"
+-
+-const overviewSkills = [
+-  { label: "Frontend", value: 92, color: "#00eaff" },
+-  { label: "Backend", value: 88, color: "#ff00ff" },
+-  { label: "Database", value: 85, color: "#00ff88" },
+-  { label: "DevOps", value: 75, color: "#ffaa00" },
+-]
+-
+-export default function SkillsPage() {
+-  return (
+-    <main className="min-h-screen flex flex-col">
+-      <Navigation />
+-
+-      <section className="pt-32 pb-20 px-4 flex-1">
+-        <div className="container mx-auto">
+-          {/* Header */}
+-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+-            <div className="flex items-center gap-3 mb-4">
+-              <div className="h-px w-12 bg-primary" />
+-              <span className="text-primary text-sm font-medium uppercase tracking-wider">Expertise</span>
+-            </div>
+-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">
+-              Skills & <span className="text-primary">Technologies</span>
+-            </h1>
+-            <p className="text-lg text-muted-foreground max-w-2xl">
+-              A comprehensive overview of my technical skills and the technologies I work with to build modern web
+-              applications.
+-            </p>
+-          </motion.div>
+-
+-          {/* Radial Charts Overview */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.1 }}
+-            className="glass-card p-8 rounded-xl mb-12"
+-          >
+-            <h2 className="text-xl font-semibold text-foreground mb-8 text-center">Skills Overview</h2>
+-            <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+-              {overviewSkills.map((skill, index) => (
+-                <RadialChart
+-                  key={skill.label}
+-                  label={skill.label}
+-                  value={skill.value}
+-                  color={skill.color}
+-                  delay={index * 0.15}
+-                />
+-              ))}
+-            </div>
+-          </motion.div>
+-
+-          {/* Skill Categories Grid */}
+-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+-            <SkillCategory title="Frontend Development" skills={skills.frontend} icon="frontend" index={0} />
+-            <SkillCategory title="Backend Development" skills={skills.backend} icon="backend" index={1} />
+-            <SkillCategory title="Databases" skills={skills.databases} icon="databases" index={2} />
+-            <SkillCategory title="DevOps & Cloud" skills={skills.devops} icon="devops" index={3} />
+-            <SkillCategory title="Tools & Platforms" skills={skills.tools} icon="tools" index={4} />
+-
+-            {/* Experience Note Card */}
+-            <motion.div
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.4, delay: 0.5 }}
+-              className="glass-card p-6 rounded-xl flex flex-col justify-center"
+-            >
+-              <div className="text-center">
+-                <div className="text-5xl font-bold text-primary mb-2">1+</div>
+-                <div className="text-lg font-medium text-foreground mb-2">Years of Experience</div>
+-                <p className="text-sm text-muted-foreground">
+-                  Building full-stack applications with focus on backend & frontend integrations at Ryzer and freelance
+-                  projects.
+-                </p>
+-              </div>
+-            </motion.div>
+-          </div>
+-
+-          {/* Technology Icons */}
+-          <motion.div
+-            initial={{ opacity: 0, y: 20 }}
+-            animate={{ opacity: 1, y: 0 }}
+-            transition={{ delay: 0.6 }}
+-            className="mt-16 text-center"
+-          >
+-            <h2 className="text-xl font-semibold text-foreground mb-8">Technologies I Work With</h2>
+-            <div className="flex flex-wrap justify-center gap-4">
+-              {[
+-                "React",
+-                "Next.js",
+-                "Node.js",
+-                "Express",
+-                "MongoDB",
+-                "PostgreSQL",
+-                "TypeScript",
+-                "Socket.IO",
+-                "Tailwind CSS",
+-                "Framer Motion",
+-                "Redis",
+-                "Docker",
+-                "AWS",
+-                "Vercel",
+-                "Git",
+-              ].map((tech, index) => (
+-                <motion.div
+-                  key={tech}
+-                  initial={{ opacity: 0, scale: 0.8 }}
+-                  animate={{ opacity: 1, scale: 1 }}
+-                  transition={{ delay: 0.7 + index * 0.05 }}
+-                  className="px-4 py-2 glass-card rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors cursor-default"
+-                >
+-                  {tech}
+-                </motion.div>
+-              ))}
+-            </div>
+-          </motion.div>
+-        </div>
+-      </section>
+-
+-      {/* <Footer /> */}
+-    </main>
+-  )
+-}
+diff --git a/components/active-visitors.tsx b/components/active-visitors.tsx
+deleted file mode 100644
+index e6f8b9b..0000000
+--- a/components/active-visitors.tsx
++++ /dev/null
+@@ -1,56 +0,0 @@
+-"use client"
+-
+-import { useEffect, useState } from "react"
+-import { Users } from "lucide-react"
+-
+-export function ActiveVisitors() {
+-    const [count, setCount] = useState<number | null>(null)
+-
+-    useEffect(() => {
+-        // Generate or retrieve session ID
+-        let sessionId = typeof window !== 'undefined' ? sessionStorage.getItem('visitorSessionId') : null
+-
+-        if (!sessionId && typeof window !== 'undefined') {
+-            sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36)
+-            sessionStorage.setItem('visitorSessionId', sessionId)
+-        }
+-
+-        const ping = async () => {
+-            if (!sessionId) return
+-
+-            try {
+-                const res = await fetch('/api/visitors', {
+-                    method: 'POST',
+-                    headers: { 'Content-Type': 'application/json' },
+-                    body: JSON.stringify({ sessionId }),
+-                })
+-                if (res.ok) {
+-                    const data = await res.json()
+-                    setCount(data.count)
+-                }
+-            } catch (e) {
+-                console.error("Failed to ping visitor API", e)
+-            }
+-        }
+-
+-        // Initial ping
+-        ping()
+-
+-        // Poll every 5 seconds
+-        const interval = setInterval(ping, 5000)
+-
+-        return () => clearInterval(interval)
+-    }, [])
+-
+-    if (count === null) return null
+-
+-    return (
+-        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-4 py-1.5 rounded-full border border-border/50 shadow-sm backdrop-blur-sm">
+-            <span className="relative flex h-2 w-2">
+-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+-            </span>
+-            <span className="font-medium">{count} {count === 1 ? 'person' : 'people'} viewing</span>
+-        </div>
+-    )
+-}
+diff --git a/components/contact-form.tsx b/components/contact-form.tsx
+deleted file mode 100644
+index 98536ae..0000000
+--- a/components/contact-form.tsx
++++ /dev/null
+@@ -1,167 +0,0 @@
+-"use client"
+-
+-import { useState } from "react"
+-import { motion, AnimatePresence } from "framer-motion"
+-import { useForm } from "react-hook-form"
+-import { Button } from "@/components/ui/button"
+-import { Input } from "@/components/ui/input"
+-import { Textarea } from "@/components/ui/textarea"
+-import { Label } from "@/components/ui/label"
+-import { Send, Check, Loader2 } from "lucide-react"
+-
+-interface FormData {
+-  name: string
+-  email: string
+-  subject: string
+-  message: string
+-}
+-
+-export function ContactForm() {
+-  const [isSubmitting, setIsSubmitting] = useState(false)
+-  const [isSuccess, setIsSuccess] = useState(false)
+-
+-  const {
+-    register,
+-    handleSubmit,
+-    reset,
+-    formState: { errors },
+-  } = useForm<FormData>()
+-
+-  const onSubmit = async (data: FormData) => {
+-    setIsSubmitting(true)
+-    try {
+-      const response = await fetch('/api/contact', {
+-        method: 'POST',
+-        headers: {
+-          'Content-Type': 'application/json',
+-        },
+-        body: JSON.stringify(data),
+-      })
+-
+-      if (!response.ok) {
+-        throw new Error('Failed to send message')
+-      }
+-
+-      console.log("Form submitted:", data)
+-      setIsSubmitting(false)
+-      setIsSuccess(true)
+-
+-      setTimeout(() => {
+-        setIsSuccess(false)
+-        reset()
+-      }, 3000)
+-    } catch (error) {
+-      console.error(error)
+-      setIsSubmitting(false)
+-      // You might want to handle error state here as well
+-      alert("Failed to send message. Please try again.")
+-    }
+-  }
+-
+-  return (
+-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+-        <div className="space-y-2">
+-          <Label htmlFor="name" className="text-foreground">
+-            Name
+-          </Label>
+-          <Input
+-            id="name"
+-            placeholder="Your name"
+-            className="bg-secondary/50 border-border focus:border-primary"
+-            {...register("name", { required: "Name is required" })}
+-          />
+-          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+-        </div>
+-
+-        <div className="space-y-2">
+-          <Label htmlFor="email" className="text-foreground">
+-            Email
+-          </Label>
+-          <Input
+-            id="email"
+-            type="email"
+-            placeholder="your@email.com"
+-            className="bg-secondary/50 border-border focus:border-primary"
+-            {...register("email", {
+-              required: "Email is required",
+-              pattern: {
+-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+-                message: "Invalid email address",
+-              },
+-            })}
+-          />
+-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+-        </div>
+-      </div>
+-
+-      <div className="space-y-2">
+-        <Label htmlFor="subject" className="text-foreground">
+-          Subject
+-        </Label>
+-        <Input
+-          id="subject"
+-          placeholder="What's this about?"
+-          className="bg-secondary/50 border-border focus:border-primary"
+-          {...register("subject", { required: "Subject is required" })}
+-        />
+-        {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
+-      </div>
+-
+-      <div className="space-y-2">
+-        <Label htmlFor="message" className="text-foreground">
+-          Message
+-        </Label>
+-        <Textarea
+-          id="message"
+-          placeholder="Tell me about your project..."
+-          rows={6}
+-          className="bg-secondary/50 border-border focus:border-primary resize-none"
+-          {...register("message", {
+-            required: "Message is required",
+-            minLength: {
+-              value: 10,
+-              message: "Message must be at least 10 characters",
+-            },
+-          })}
+-        />
+-        {errors.message && <p className="text-sm text-destructive">{errors.message.message}</p>}
+-      </div>
+-
+-      <AnimatePresence mode="wait">
+-        {isSuccess ? (
+-          <motion.div
+-            initial={{ opacity: 0, scale: 0.9 }}
+-            animate={{ opacity: 1, scale: 1 }}
+-            exit={{ opacity: 0, scale: 0.9 }}
+-            className="flex items-center justify-center gap-2 py-3 bg-green-500/20 border border-green-500/30 rounded-lg"
+-          >
+-            <Check className="h-5 w-5 text-green-500" />
+-            <span className="text-green-500 font-medium">Message sent successfully!</span>
+-          </motion.div>
+-        ) : (
+-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+-            <Button
+-              type="submit"
+-              disabled={isSubmitting}
+-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+-              size="lg"
+-            >
+-              {isSubmitting ? (
+-                <>
+-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+-                  Sending...
+-                </>
+-              ) : (
+-                <>
+-                  <Send className="mr-2 h-4 w-4" />
+-                  Send Message
+-                </>
+-              )}
+-            </Button>
+-          </motion.div>
+-        )}
+-      </AnimatePresence>
+-    </form>
+-  )
+-}
+diff --git a/components/experience-card.tsx b/components/experience-card.tsx
+deleted file mode 100644
+index 4cca3d5..0000000
+--- a/components/experience-card.tsx
++++ /dev/null
+@@ -1,88 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import { Badge } from "@/components/ui/badge"
+-import { Briefcase, Calendar, ChevronRight } from "lucide-react"
+-
+-interface Experience {
+-  id: number
+-  role: string
+-  company: string
+-  period: string
+-  description: string
+-  achievements: string[]
+-  technologies: string[]
+-}
+-
+-interface ExperienceCardProps {
+-  experience: Experience
+-  index: number
+-  isLast: boolean
+-}
+-
+-export function ExperienceCard({ experience, index, isLast }: ExperienceCardProps) {
+-  return (
+-    <motion.div
+-      initial={{ opacity: 0, x: -20 }}
+-      animate={{ opacity: 1, x: 0 }}
+-      transition={{ duration: 0.4, delay: index * 0.15 }}
+-      className="relative pl-8 pb-12"
+-    >
+-      {/* Timeline Line */}
+-      {!isLast && <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-gradient-to-b from-primary to-border" />}
+-
+-      {/* Timeline Dot */}
+-      <motion.div
+-        initial={{ scale: 0 }}
+-        animate={{ scale: 1 }}
+-        transition={{ delay: index * 0.15 + 0.2, type: "spring" }}
+-        className="absolute left-0 top-2 w-6 h-6 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center"
+-      >
+-        <div className="w-2 h-2 rounded-full bg-primary" />
+-      </motion.div>
+-
+-      {/* Content Card */}
+-      <div className="glass-card p-6 rounded-xl ml-4 group hover:border-primary/30 transition-colors">
+-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
+-          <div>
+-            <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+-              {experience.role}
+-            </h3>
+-            <div className="flex items-center gap-2 text-primary">
+-              <Briefcase className="h-4 w-4" />
+-              <span className="font-medium">{experience.company}</span>
+-            </div>
+-          </div>
+-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+-            <Calendar className="h-4 w-4" />
+-            <span>{experience.period}</span>
+-          </div>
+-        </div>
+-
+-        <p className="text-muted-foreground mb-4 leading-relaxed">{experience.description}</p>
+-
+-        {/* Achievements */}
+-        <div className="mb-4">
+-          <h4 className="text-sm font-semibold text-foreground mb-2">Key Achievements</h4>
+-          <ul className="space-y-2">
+-            {experience.achievements.map((achievement, i) => (
+-              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+-                <ChevronRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+-                <span>{achievement}</span>
+-              </li>
+-            ))}
+-          </ul>
+-        </div>
+-
+-        {/* Technologies */}
+-        <div className="flex flex-wrap gap-2">
+-          {experience.technologies.map((tech) => (
+-            <Badge key={tech} variant="outline" className="text-xs border-primary/30 text-primary bg-primary/5">
+-              {tech}
+-            </Badge>
+-          ))}
+-        </div>
+-      </div>
+-    </motion.div>
+-  )
+-}
+diff --git a/components/footer.tsx b/components/footer.tsx
+deleted file mode 100644
+index 009d11e..0000000
+--- a/components/footer.tsx
++++ /dev/null
+@@ -1,121 +0,0 @@
+-"use client"
+-
+-import Link from "next/link"
+-import { motion } from "framer-motion"
+-import { Github, Linkedin, Twitter, Mail, Heart, ArrowUpRight } from "lucide-react"
+-import { personalInfo } from "@/lib/data"
+-import { ActiveVisitors } from "@/components/active-visitors"
+-
+-const footerLinks = {
+-  navigation: [
+-    { label: "Home", href: "#home" },
+-    { label: "Projects", href: "#projects" },
+-    { label: "Skills", href: "#skills" },
+-    { label: "Experience", href: "#experience" },
+-  ],
+-  resources: [
+-    { label: "Contact", href: "#contact" },
+-  ],
+-}
+-
+-const socialLinks = [
+-  { icon: Github, href: personalInfo.social.github, label: "GitHub" },
+-  { icon: Linkedin, href: personalInfo.social.linkedin, label: "LinkedIn" },
+-  // { icon: Twitter, href: personalInfo.social.twitter, label: "Twitter" },
+-  { icon: Mail, href: `mailto:${personalInfo.email}`, label: "Email" },
+-]
+-
+-export function Footer() {
+-  const currentYear = new Date().getFullYear()
+-
+-  return (
+-    <footer className="border-t border-border bg-card/50">
+-      <div className="container mx-auto px-4 py-12">
+-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+-          {/* Brand */}
+-          <div className="md:col-span-2">
+-            <Link href="/" className="inline-block mb-4">
+-              <span className="text-2xl font-bold text-foreground">
+-                {personalInfo.name.split(" ")[0]}
+-                <span className="text-primary">.</span>
+-              </span>
+-            </Link>
+-            <p className="text-muted-foreground text-sm max-w-md mb-6 leading-relaxed">
+-              Full Stack Developer specializing in building exceptional digital experiences with modern web
+-              technologies.
+-            </p>
+-            <div className="flex items-center gap-3">
+-              {socialLinks.map((social) => (
+-                <motion.a
+-                  key={social.label}
+-                  href={social.href}
+-                  target="_blank"
+-                  rel="noopener noreferrer"
+-                  whileHover={{ scale: 1.1 }}
+-                  whileTap={{ scale: 0.95 }}
+-                  className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 hover:text-primary transition-colors"
+-                  aria-label={social.label}
+-                >
+-                  <social.icon className="h-4 w-4" />
+-                </motion.a>
+-              ))}
+-            </div>
+-          </div>
+-
+-          {/* Navigation Links */}
+-          <div>
+-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">Navigation</h3>
+-            <ul className="space-y-2">
+-              {footerLinks.navigation.map((link) => (
+-                <li key={link.href}>
+-                  <Link
+-                    href={link.href}
+-                    className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1 group"
+-                  >
+-                    {link.label}
+-                    <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+-                  </Link>
+-                </li>
+-              ))}
+-            </ul>
+-          </div>
+-
+-          {/* Resources */}
+-          <div>
+-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">Resources</h3>
+-            <ul className="space-y-2">
+-              {footerLinks.resources.map((link) => (
+-                <li key={link.href}>
+-                  <Link
+-                    href={link.href}
+-                    className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1 group"
+-                  >
+-                    {link.label}
+-                    <ArrowUpRight className="h-3 w-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+-                  </Link>
+-                </li>
+-              ))}
+-            </ul>
+-          </div>
+-        </div>
+-
+-        {/* Bottom Bar */}
+-        <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+-          <p className="text-sm text-muted-foreground flex items-center gap-1">
+-            &copy; {currentYear} {personalInfo.name}
+-           
+-          </p>
+-          <div className="flex flex-col sm:items-end gap-2">
+-            <p className="text-sm text-muted-foreground">
+-              <span className="inline-flex items-center gap-2">
+-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+-                Available for new opportunities
+-              </span>
+-            </p>
+-            <ActiveVisitors />
+-          </div>
+-        </div>
+-      </div>
+-    </footer >
+-  )
+-}
+diff --git a/components/hero-scene.tsx b/components/hero-scene.tsx
+deleted file mode 100644
+index 6b61a37..0000000
+--- a/components/hero-scene.tsx
++++ /dev/null
+@@ -1,120 +0,0 @@
+-"use client"
+-
+-import { useRef, useMemo } from "react"
+-import { Canvas, useFrame } from "@react-three/fiber"
+-import { Float, MeshDistortMaterial, Sphere, Box, Torus } from "@react-three/drei"
+-import type * as THREE from "three"
+-
+-function FloatingCube({
+-  position,
+-  color,
+-  speed = 1,
+-}: { position: [number, number, number]; color: string; speed?: number }) {
+-  const meshRef = useRef<THREE.Mesh>(null)
+-
+-  useFrame((state) => {
+-    if (meshRef.current) {
+-      meshRef.current.rotation.x = state.clock.elapsedTime * 0.3 * speed
+-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.2 * speed
+-    }
+-  })
+-
+-  return (
+-    <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+-      <Box ref={meshRef} args={[1, 1, 1]} position={position}>
+-        <meshStandardMaterial color={color} transparent opacity={0.6} wireframe />
+-      </Box>
+-    </Float>
+-  )
+-}
+-
+-function GlowingSphere({ position }: { position: [number, number, number] }) {
+-  const meshRef = useRef<THREE.Mesh>(null)
+-
+-  useFrame((state) => {
+-    if (meshRef.current) {
+-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime) * 0.3
+-    }
+-  })
+-
+-  return (
+-    <Sphere ref={meshRef} args={[0.5, 32, 32]} position={position}>
+-      <MeshDistortMaterial color="#00eaff" transparent opacity={0.8} distort={0.4} speed={2} roughness={0} />
+-    </Sphere>
+-  )
+-}
+-
+-function FloatingTorus({ position }: { position: [number, number, number] }) {
+-  const meshRef = useRef<THREE.Mesh>(null)
+-
+-  useFrame((state) => {
+-    if (meshRef.current) {
+-      meshRef.current.rotation.x = state.clock.elapsedTime * 0.5
+-      meshRef.current.rotation.z = state.clock.elapsedTime * 0.3
+-    }
+-  })
+-
+-  return (
+-    <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.8}>
+-      <Torus ref={meshRef} args={[0.8, 0.2, 16, 100]} position={position}>
+-        <meshStandardMaterial color="#00eaff" transparent opacity={0.4} wireframe />
+-      </Torus>
+-    </Float>
+-  )
+-}
+-
+-function Particles({ count = 100 }) {
+-  const points = useMemo(() => {
+-    const positions = new Float32Array(count * 3)
+-    for (let i = 0; i < count; i++) {
+-      positions[i * 3] = (Math.random() - 0.5) * 20
+-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20
+-      positions[i * 3 + 2] = (Math.random() - 0.5) * 20
+-    }
+-    return positions
+-  }, [count])
+-
+-  const pointsRef = useRef<THREE.Points>(null)
+-
+-  useFrame((state) => {
+-    if (pointsRef.current) {
+-      pointsRef.current.rotation.y = state.clock.elapsedTime * 0.02
+-    }
+-  })
+-
+-  return (
+-    <points ref={pointsRef}>
+-      <bufferGeometry>
+-        <bufferAttribute attach="attributes-position" count={count} array={points} itemSize={3} />
+-      </bufferGeometry>
+-      <pointsMaterial size={0.05} color="#00eaff" transparent opacity={0.6} sizeAttenuation />
+-    </points>
+-  )
+-}
+-
+-export function HeroScene() {
+-  return (
+-    <div className="absolute inset-0 -z-10">
+-      <Canvas camera={{ position: [0, 0, 8], fov: 50 }} gl={{ antialias: true, alpha: true }}>
+-        <ambientLight intensity={0.5} />
+-        {/* <pointLight position={[10, 10, 10]} intensity={1} color="#00eaff" /> */}
+-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff00ff" />
+-
+-        <FloatingCube position={[-3, 2, -2]} color="#00eaff" speed={0.8} />
+-        <FloatingCube position={[3, -1, -3]} color="#ff00ff" speed={1.2} />
+-        <FloatingCube position={[4, 2, -4]} color="#00eaff" speed={0.6} />
+-        <FloatingCube position={[8, 2, -4]} color="#00eaff" speed={0.6} />
+-
+-
+-        <GlowingSphere position={[-2, -2, -1]} />
+-        <GlowingSphere position={[2, 1, -2]} />
+-
+-        <FloatingTorus position={[0, 0, -5]} />
+-
+-         {/* <FloatingTorus position={[0, 0, -5]} /> */}
+-
+-        <Particles count={200} />
+-      </Canvas>
+-    </div>
+-  )
+-}
+diff --git a/components/hero-section.tsx b/components/hero-section.tsx
+deleted file mode 100644
+index 96ebebc..0000000
+--- a/components/hero-section.tsx
++++ /dev/null
+@@ -1,150 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import Link from "next/link"
+-import { ArrowRight, Download, Github, Linkedin } from "lucide-react"
+-import { Button } from "@/components/ui/button"
+-import { HeroScene } from "@/components/hero-scene"
+-import { TypingAnimation } from "@/components/typing-animation"
+-import { TechCarousel } from "@/components/tech-carousel"
+-import { personalInfo } from "@/lib/data"
+-
+-export function HeroSection() {
+-  return (
+-    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
+-      <HeroScene />
+-
+-      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
+-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+-          <div className="flex flex-col items-start text-left">
+-            <motion.div
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.5 }}
+-              className="mb-6"
+-            >
+-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm text-muted-foreground">
+-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+-                Available for work
+-              </span>
+-            </motion.div>
+-
+-            <motion.h1
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.5, delay: 0.1 }}
+-              className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-balance"
+-            >
+-              <span className="glitch-text">{personalInfo.name}</span>
+-            </motion.h1>
+-
+-            <motion.div
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.5, delay: 0.2 }}
+-              className="text-xl md:text-2xl lg:text-3xl text-muted-foreground mb-8 h-10"
+-            >
+-              <TypingAnimation words={personalInfo.taglines} />
+-            </motion.div>
+-
+-            <motion.p
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.5, delay: 0.3 }}
+-              className="text-lg text-muted-foreground max-w-2xl mb-10 leading-relaxed"
+-            >
+-              {personalInfo.about}
+-            </motion.p>
+-
+-            <motion.div
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.5, delay: 0.4 }}
+-              className="flex flex-wrap items-center gap-4"
+-            >
+-              <Link href="/projects">
+-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 group">
+-                  View Projects
+-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+-                </Button>
+-              </Link>
+-              <Link href="/Resume.pdf" target="_blank" rel="noopener noreferrer" download>
+-                <Button size="lg" variant="outline" className="border-border hover:bg-secondary group bg-transparent">
+-                  <Download className="mr-2 h-4 w-4" />
+-                  Download Resume
+-                </Button>
+-              </Link>
+-            </motion.div>
+-
+-            <motion.div
+-              initial={{ opacity: 0, y: 20 }}
+-              animate={{ opacity: 1, y: 0 }}
+-              transition={{ duration: 0.5, delay: 0.5 }}
+-              className="flex items-center gap-4 mt-10"
+-            >
+-              <Link
+-                href={personalInfo.social.github}
+-                target="_blank"
+-                rel="noopener noreferrer"
+-                className="text-muted-foreground hover:text-primary transition-colors"
+-              >
+-                <Github className="h-6 w-6" />
+-              </Link>
+-              <Link
+-                href={personalInfo.social.linkedin}
+-                target="_blank"
+-                rel="noopener noreferrer"
+-                className="text-muted-foreground hover:text-primary transition-colors"
+-              >
+-                <Linkedin className="h-6 w-6" />
+-              </Link>
+-              <div className="h-6 w-px bg-border mx-2" />
+-              <span className="text-sm text-muted-foreground">{personalInfo.email}</span>
+-            </motion.div>
+-          </div>
+-
+-          {/* <motion.div
+-            initial={{ opacity: 0, scale: 0.8 }}
+-            animate={{ opacity: 1, scale: 1 }}
+-            transition={{ duration: 0.5, delay: 0.2 }}
+-            className="hidden lg:flex justify-center"
+-          >
+-            <div className="relative w-[400px] h-[400px] rounded-full overflow-hidden border-4 border-muted/20 shadow-2xl glass-card">
+-              <img
+-                src={personalInfo.avatar}
+-                alt={personalInfo.name}
+-                className="w-full h-full object-cover"
+-              />xdlkcnm'c
+-              <div className="absolute inset-0 bg-linear-to-tr from-primary/20 to-transparent pointer-events-none" />
+-            </div>
+-          </motion.div> */}
+-        </div>
+-      </div>
+-
+-      <motion.div
+-        initial={{ opacity: 0 }}
+-        animate={{ opacity: 1 }}
+-        transition={{ duration: 0.5, delay: 0.6 }}
+-        className="mt-auto"
+-      >
+-        <TechCarousel />
+-      </motion.div>
+-
+-      {/* Scroll Indicator */}
+-      <motion.div
+-        initial={{ opacity: 0 }}
+-        animate={{ opacity: 1 }}
+-        transition={{ duration: 0.5, delay: 0.7 }}
+-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+-      >
+-        <motion.div
+-          animate={{ y: [0, 10, 0] }}
+-          transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+-          className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-2"
+-        >
+-          <motion.div className="w-1.5 h-1.5 rounded-full bg-primary" />
+-        </motion.div>
+-      </motion.div>
+-    </section>
+-  )
+-}
+diff --git a/components/navigation.tsx b/components/navigation.tsx
+deleted file mode 100644
+index 1c4b028..0000000
+--- a/components/navigation.tsx
++++ /dev/null
+@@ -1,172 +0,0 @@
+-"use client"
+-
+-import { useState, useEffect } from "react"
+-import Link from "next/link"
+-import { usePathname } from "next/navigation"
+-import { motion, AnimatePresence } from "framer-motion"
+-import { Menu, X, Github, Linkedin } from "lucide-react"
+-import { Button } from "@/components/ui/button"
+-import { cn } from "@/lib/utils"
+-import { personalInfo } from "@/lib/data"
+-import { ThemeToggle } from "./theme-toggle"
+-
+-const navLinks = [
+-  { href: "#home", label: "Home" },
+-  { href: "#projects", label: "Projects" },
+-  { href: "#skills", label: "Skills" },
+-  { href: "#experience", label: "Experience" },
+-  { href: "#contact", label: "Contact" },
+-]
+-
+-export function Navigation() {
+-  const [isOpen, setIsOpen] = useState(false)
+-  const [scrolled, setScrolled] = useState(false)
+-  const [activeSection, setActiveSection] = useState("home")
+-  const pathname = usePathname()
+-
+-  useEffect(() => {
+-    const handleScroll = () => {
+-      setScrolled(window.scrollY > 50)
+-
+-      const sections = navLinks.map((link) => link.href.substring(1))
+-
+-      let current = ""
+-      for (const section of sections) {
+-        const element = document.getElementById(section)
+-        if (element) {
+-          const rect = element.getBoundingClientRect()
+-          if (rect.top <= 150 && rect.bottom >= 150) {
+-            current = section
+-          }
+-        }
+-      }
+-
+-      if (current) {
+-        setActiveSection(current)
+-      }
+-    }
+-
+-    window.addEventListener("scroll", handleScroll)
+-    return () => window.removeEventListener("scroll", handleScroll)
+-  }, [])
+-
+-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+-    e.preventDefault()
+-    const element = document.querySelector(href)
+-    if (element) {
+-      const offsetTop = element.getBoundingClientRect().top + window.pageYOffset - 100
+-      window.scrollTo({
+-        top: offsetTop,
+-        behavior: "smooth",
+-      })
+-      setIsOpen(false)
+-    }
+-  }
+-
+-  return (
+-    <header
+-      className={cn(
+-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+-        scrolled ? "glass-card py-3" : "py-6",
+-      )}
+-    >
+-      <div className="container mx-auto px-4 flex items-center justify-between">
+-          <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+-            {personalInfo.name.split(" ")[0]}
+-            <span className="text-primary">.</span>
+-          </span>
+-
+-        {/* Desktop Navigation */}
+-        <nav className="hidden md:flex items-center gap-8">
+-          {navLinks.map((link) => (
+-            <a
+-              key={link.href}
+-              href={link.href}
+-              onClick={(e) => scrollToSection(e, link.href)}
+-              className={cn(
+-                "relative text-sm font-medium transition-colors hover:text-primary cursor-pointer",
+-                activeSection === link.href.substring(1) ? "text-primary" : "text-muted-foreground",
+-              )}
+-            >
+-              {link.label}
+-              {activeSection === link.href.substring(1) && (
+-                <motion.div
+-                  layoutId="activeNav"
+-                  className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"
+-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+-                />
+-              )}
+-            </a>
+-          ))}
+-        </nav>
+-
+-        <div className="hidden md:flex items-center gap-2">
+-          {/* <ThemeToggle /> */}
+-          <Link href={personalInfo.social.github} target="_blank" rel="noopener noreferrer">
+-            <Button variant="ghost" size="icon" className="hover:text-primary">
+-              <Github className="h-5 w-5" />
+-            </Button>
+-          </Link>
+-          <Link href={personalInfo.social.linkedin} target="_blank" rel="noopener noreferrer">
+-            <Button variant="ghost" size="icon" className="hover:text-primary">
+-              <Linkedin className="h-5 w-5" />
+-            </Button>
+-          </Link>
+-          <Link href="/resume">
+-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Resume</Button>
+-          </Link>
+-        </div>
+-
+-        {/* Mobile Menu Button */}
+-        <div className="flex items-center gap-2 md:hidden">
+-          <ThemeToggle />
+-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)}>
+-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+-          </Button>
+-        </div>
+-      </div>
+-
+-      {/* Mobile Navigation */}
+-      <AnimatePresence>
+-        {isOpen && (
+-          <motion.div
+-            initial={{ opacity: 0, height: 0 }}
+-            animate={{ opacity: 1, height: "auto" }}
+-            exit={{ opacity: 0, height: 0 }}
+-            className="md:hidden glass-card mt-2 mx-4 rounded-lg overflow-hidden"
+-          >
+-            <nav className="flex flex-col p-4">
+-              {navLinks.map((link, i) => (
+-                <motion.div
+-                  key={link.href}
+-                  initial={{ opacity: 0, x: -20 }}
+-                  animate={{ opacity: 1, x: 0 }}
+-                  transition={{ delay: i * 0.1 }}
+-                >
+-                  <a
+-                    href={link.href}
+-                    onClick={(e) => scrollToSection(e, link.href)}
+-                    className={cn(
+-                      "block py-3 text-lg font-medium transition-colors cursor-pointer",
+-                      activeSection === link.href.substring(1) ? "text-primary" : "text-muted-foreground hover:text-foreground",
+-                    )}
+-                  >
+-                    {link.label}
+-                  </a>
+-                </motion.div>
+-              ))}
+-              <div className="flex items-center gap-4 pt-4 mt-4 border-t border-border">
+-                <Link href={personalInfo.social.github} target="_blank" rel="noopener noreferrer">
+-                  <Github className="h-5 w-5 text-muted-foreground hover:text-primary" />
+-                </Link>
+-                <Link href={personalInfo.social.linkedin} target="_blank" rel="noopener noreferrer">
+-                  <Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary" />
+-                </Link>
+-              </div>
+-            </nav>
+-          </motion.div>
+-        )}
+-      </AnimatePresence>
+-    </header>
+-  )
+-}
+diff --git a/components/nurui/electric-cursor.tsx b/components/nurui/electric-cursor.tsx
+deleted file mode 100644
+index ad1b1d6..0000000
+--- a/components/nurui/electric-cursor.tsx
++++ /dev/null
+@@ -1,96 +0,0 @@
+-"use client";
+-import React, { useEffect, useRef } from "react";
+-
+-// Interface for Spark instance
+-interface ISpark {
+-  x: number;
+-  y: number;
+-  length: number;
+-  alpha: number;
+-  update: () => void;
+-  draw: () => void;
+-}
+-
+-const ElectricCursor: React.FC = () => {
+-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+-
+-  useEffect(() => {
+-    const sparks: ISpark[] = [];
+-    const canvas = canvasRef.current;
+-    if (!canvas) return;
+-
+-    const ctx = canvas.getContext("2d");
+-    if (!ctx) return;
+-
+-    canvas.width = window.innerWidth;
+-    canvas.height = window.innerHeight;
+-
+-    class Spark implements ISpark {
+-      x: number;
+-      y: number;
+-      length: number;
+-      alpha: number;
+-
+-      constructor(x: number, y: number) {
+-        this.x = x;
+-        this.y = y;
+-        this.length = Math.random() * 10 + 5;
+-        this.alpha = 1;
+-      }
+-
+-      update(): void {
+-        this.length -= 0.5;
+-        this.alpha -= 0.03;
+-      }
+-
+-      draw(): void {
+-        if (!ctx) return;
+-        ctx.beginPath();
+-        ctx.moveTo(this.x, this.y);
+-        ctx.lineTo(
+-          this.x + Math.random() * this.length,
+-          this.y + Math.random() * this.length,
+-        );
+-        ctx.strokeStyle = `rgba(0, 200, 255, ${this.alpha})`;
+-        ctx.lineWidth = 1;
+-        ctx.stroke();
+-      }
+-    }
+-
+-    const animate = (): void => {
+-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+-
+-      for (let i = sparks.length - 1; i >= 0; i--) {
+-        sparks[i].update();
+-        sparks[i].draw();
+-        if (sparks[i].alpha <= 0) {
+-          sparks.splice(i, 1);
+-        }
+-      }
+-
+-      requestAnimationFrame(animate);
+-    };
+-
+-    const onMove = (e: MouseEvent): void => {
+-      for (let i = 0; i < 3; i++) {
+-        sparks.push(new Spark(e.clientX, e.clientY));
+-      }
+-    };
+-
+-    window.addEventListener("mousemove", onMove);
+-    animate();
+-
+-    return () => {
+-      window.removeEventListener("mousemove", onMove);
+-    };
+-  }, []);
+-
+-  return (
+-    <canvas
+-      ref={canvasRef}
+-      className="fixed inset-0 w-full h-full pointer-events-none z-50"
+-    />
+-  );
+-};
+-
+-export default ElectricCursor;
+diff --git a/components/project-card.tsx b/components/project-card.tsx
+deleted file mode 100644
+index 740cd88..0000000
+--- a/components/project-card.tsx
++++ /dev/null
+@@ -1,132 +0,0 @@
+-"use client"
+-
+-import { useState } from "react"
+-import Image from "next/image"
+-import Link from "next/link"
+-import { motion } from "framer-motion"
+-import { Github, ExternalLink, ChevronRight } from "lucide-react"
+-import { Badge } from "@/components/ui/badge"
+-import { Button } from "@/components/ui/button"
+-import { cn } from "@/lib/utils"
+-
+-interface ProjectCardProps {
+-  project: {
+-    id: number
+-    name: string
+-    description: string
+-    image: string
+-    technologies: string[]
+-    category: string
+-    github: string
+-    live: string
+-    role: string
+-    comingsoon?: boolean
+-  }
+-  index: number
+-}
+-
+-export function ProjectCard({ project, index }: ProjectCardProps) {
+-  const [isHovered, setIsHovered] = useState(false)
+-
+-  return (
+-    <>
+-
+-      <motion.div
+-        initial={{ opacity: 0, y: 20 }}
+-        animate={{ opacity: 1, y: 0 }}
+-        transition={{ duration: 0.4, delay: index * 0.1 }}
+-        onMouseEnter={() => setIsHovered(true)}
+-        onMouseLeave={() => setIsHovered(false)}
+-        className="group relative glass-card rounded-xl overflow-hidden "
+-
+-      >
+-        {/* Project Image */}
+-
+-        <div className="relative aspect-video overflow-hidden">
+-          <Image
+-            src={project.image || "/placeholder.svg"}
+-            alt={project.name}
+-            fill
+-            className={cn("object-cover transition-transform duration-500", isHovered && "scale-110")}
+-          />
+-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+-
+-          {/* Category Badge */}
+-          <div className="absolute top-4 left-4">
+-            <Badge variant="secondary" className="bg-primary/20 text-primary border border-primary/30">
+-              {project.category}
+-            </Badge>
+-          </div>
+-
+-          {/* Links Overlay */}
+-          <motion.div
+-            initial={{ opacity: 0 }}
+-            animate={{ opacity: isHovered ? 1 : 0 }}
+-            className={cn(
+-              "absolute transition-all duration-300",
+-              project.comingsoon
+-                ? "inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] z-20"
+-                : "top-4 right-4 flex gap-2 z-20"
+-            )}
+-          >
+-            {project.comingsoon ? (
+-              <div className="bg-background/80 px-4 py-2 rounded-full border border-primary/20 shadow-lg backdrop-blur-md">
+-                <span className="text-sm font-bold text-primary">Coming Soon</span>
+-              </div>
+-            ) : (
+-              <div className="flex gap-2">
+-                <Link href={project.github} target="_blank" rel="noopener noreferrer">
+-                  <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors">
+-                    <Github className="h-4 w-4" />
+-                  </Button>
+-                </Link>
+-                <Link href={project.live} target="_blank" rel="noopener noreferrer">
+-                  <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors">
+-                    <ExternalLink className="h-4 w-4" />
+-                  </Button>
+-                </Link>
+-              </div>
+-            )}
+-          </motion.div>
+-        </div>
+-
+-        {/* Project Info */}
+-        <div className="p-6">
+-          <div className="flex items-start justify-between mb-3">
+-            <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+-              {project.name}
+-            </h3>
+-            <motion.div animate={{ x: isHovered ? 0 : -10, opacity: isHovered ? 1 : 0 }} transition={{ duration: 0.2 }}>
+-              <ChevronRight className="h-5 w-5 text-primary" />
+-            </motion.div>
+-          </div>
+-
+-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{project.description}</p>
+-
+-          {/* Role */}
+-          <p className="text-xs text-primary mb-4 font-medium">{project.role}</p>
+-
+-          {/* Technologies */}
+-          <div className="flex flex-wrap gap-2">
+-            {project.technologies.slice(0, 4).map((tech) => (
+-              <Badge key={tech} variant="outline" className="text-xs border-border text-muted-foreground">
+-                {tech}
+-              </Badge>
+-            ))}
+-          </div>
+-        </div>
+-
+-        {/* Glow Effect */}
+-        <motion.div
+-          initial={{ opacity: 0 }}
+-          animate={{ opacity: isHovered ? 1 : 0 }}
+-          className="absolute inset-0 pointer-events-none"
+-          style={{
+-            boxShadow: "inset 0 0 60px rgba(0, 234, 255, 0.1)",
+-          }}
+-        />
+-      </motion.div>
+-    </>
+-
+-  )
+-}
+diff --git a/components/project-filters.tsx b/components/project-filters.tsx
+deleted file mode 100644
+index 58211fe..0000000
+--- a/components/project-filters.tsx
++++ /dev/null
+@@ -1,36 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import { cn } from "@/lib/utils"
+-
+-interface ProjectFiltersProps {
+-  categories: string[]
+-  activeCategory: string
+-  onCategoryChange: (category: string) => void
+-}
+-
+-export function ProjectFilters({ categories, activeCategory, onCategoryChange }: ProjectFiltersProps) {
+-  return (
+-    <div className="flex flex-wrap gap-2">
+-      {categories.map((category) => (
+-        <button
+-          key={category}
+-          onClick={() => onCategoryChange(category)}
+-          className={cn(
+-            "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+-            activeCategory === category ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+-          )}
+-        >
+-          {activeCategory === category && (
+-            <motion.div
+-              layoutId="activeCategory"
+-              className="absolute inset-0 bg-primary rounded-lg"
+-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+-            />
+-          )}
+-          <span className="relative z-10">{category}</span>
+-        </button>
+-      ))}
+-    </div>
+-  )
+-}
+diff --git a/components/radial-chart.tsx b/components/radial-chart.tsx
+deleted file mode 100644
+index a0613b9..0000000
+--- a/components/radial-chart.tsx
++++ /dev/null
+@@ -1,57 +0,0 @@
+-"use client"
+-
+-import { motion, useInView } from "framer-motion"
+-import { useRef } from "react"
+-
+-interface RadialChartProps {
+-  label: string
+-  value: number
+-  color: string
+-  delay?: number
+-}
+-
+-export function RadialChart({ label, value, color, delay = 0 }: RadialChartProps) {
+-  const ref = useRef<HTMLDivElement>(null)
+-  const isInView = useInView(ref, { once: true, margin: "-50px" })
+-
+-  const circumference = 2 * Math.PI * 45
+-  const strokeDashoffset = circumference - (value / 100) * circumference
+-
+-  return (
+-    <div ref={ref} className="flex flex-col items-center gap-3">
+-      <div className="relative w-28 h-28">
+-        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+-          <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="6" fill="none" className="text-secondary" />
+-          <motion.circle
+-            cx="50"
+-            cy="50"
+-            r="45"
+-            stroke={color}
+-            strokeWidth="6"
+-            fill="none"
+-            strokeLinecap="round"
+-            initial={{ strokeDasharray: circumference, strokeDashoffset: circumference }}
+-            animate={{
+-              strokeDashoffset: isInView ? strokeDashoffset : circumference,
+-            }}
+-            transition={{ duration: 1.2, delay, ease: "easeOut" }}
+-            style={{
+-              filter: `drop-shadow(0 0 8px ${color})`,
+-            }}
+-          />
+-        </svg>
+-        <div className="absolute inset-0 flex items-center justify-center">
+-          <motion.span
+-            initial={{ opacity: 0 }}
+-            animate={{ opacity: isInView ? 1 : 0 }}
+-            transition={{ duration: 0.3, delay: delay + 0.8 }}
+-            className="text-2xl font-bold text-foreground"
+-          >
+-            {value}%
+-          </motion.span>
+-        </div>
+-      </div>
+-      <span className="text-sm text-muted-foreground text-center">{label}</span>
+-    </div>
+-  )
+-}
+diff --git a/components/site/about.tsx b/components/site/about.tsx
+new file mode 100644
+index 0000000..4536db8
+--- /dev/null
++++ b/components/site/about.tsx
+@@ -0,0 +1,68 @@
++"use client"
++
++import { useRef } from "react"
++import { motion, useScroll, useTransform, type MotionValue } from "framer-motion"
++import { SectionLabel } from "./section-label"
++
++const statement =
++  "I build fast, accessible products for the web — from pixel-perfect interfaces to the APIs and real-time systems behind them. Currently shipping tokenized real-estate platforms at Ryzer."
++
++const stats = [
++  { value: "15+", label: "Projects shipped" },
++  { value: "20+", label: "Technologies" },
++  { value: "1+", label: "Years building" },
++  { value: "300K", label: "Lines of code" },
++]
++
++function Word({ children, progress, range }: { children: string; progress: MotionValue<number>; range: [number, number] }) {
++  const opacity = useTransform(progress, range, [0.15, 1])
++  return (
++    <span className="relative mr-[0.25em] inline-block">
++      <motion.span style={{ opacity }}>{children}</motion.span>
++    </span>
++  )
++}
++
++export function About() {
++  const textRef = useRef<HTMLParagraphElement>(null)
++  const { scrollYProgress } = useScroll({ target: textRef, offset: ["start 0.85", "end 0.4"] })
++
++  const sectionRef = useRef<HTMLElement>(null)
++  const { scrollYProgress: sectionProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] })
++  const blobY = useTransform(sectionProgress, [0, 1], ["-30%", "40%"])
++  const statsY = useTransform(sectionProgress, [0, 1], ["20%", "-20%"])
++
++  const words = statement.split(" ")
++
++  return (
++    <section ref={sectionRef} id="about" className="relative overflow-hidden py-28 md:py-40">
++      <motion.div
++        aria-hidden
++        style={{ y: blobY }}
++        className="pointer-events-none absolute -right-40 top-0 h-[520px] w-[520px] rounded-full bg-lime/10 blur-[120px]"
++      />
++      <div className="relative mx-auto max-w-[1400px] px-4 md:px-8">
++        <SectionLabel>About me</SectionLabel>
++        <p ref={textRef} className="max-w-6xl font-display text-3xl font-bold leading-[1.15] tracking-tight md:text-6xl">
++          {words.map((w, i) => {
++            const start = i / words.length
++            return (
++              <Word key={i} progress={scrollYProgress} range={[start, start + 1 / words.length]}>
++                {w}
++              </Word>
++            )
++          })}
++        </p>
++
++        <motion.dl style={{ y: statsY }} className="mt-24 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line md:grid-cols-4">
++          {stats.map((s) => (
++            <div key={s.label} className="bg-ink p-6 md:p-10">
++              <dt className="text-xs uppercase tracking-[0.2em] text-paper-dim">{s.label}</dt>
++              <dd className="mt-4 font-display text-5xl font-extrabold tracking-tighter text-lime md:text-7xl">{s.value}</dd>
++            </div>
++          ))}
++        </motion.dl>
++      </div>
++    </section>
++  )
++}
+diff --git a/components/site/contact.tsx b/components/site/contact.tsx
+new file mode 100644
+index 0000000..bcbf8ca
+--- /dev/null
++++ b/components/site/contact.tsx
+@@ -0,0 +1,80 @@
++"use client"
++
++import { useState, type FormEvent } from "react"
++import { ArrowUpRight, Loader2 } from "lucide-react"
++import { personalInfo } from "@/lib/data"
++import { SectionLabel } from "./section-label"
++
++type Status = "idle" | "sending" | "sent" | "error"
++
++export function Contact() {
++  const [status, setStatus] = useState<Status>("idle")
++
++  async function onSubmit(e: FormEvent<HTMLFormElement>) {
++    e.preventDefault()
++    const form = e.currentTarget
++    const data = Object.fromEntries(new FormData(form))
++    setStatus("sending")
++    try {
++      const res = await fetch("/api/contact", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify(data),
++      })
++      if (!res.ok) throw new Error("Request failed")
++      form.reset()
++      setStatus("sent")
++    } catch {
++      setStatus("error")
++    }
++  }
++
++  const field =
++    "w-full border-b border-line bg-transparent py-4 text-lg outline-none transition-colors placeholder:text-paper-dim/60 focus:border-lime"
++
++  return (
++    <section id="contact" className="mx-auto max-w-[1400px] px-4 py-28 md:px-8 md:py-40">
++      <div className="grid gap-16 md:grid-cols-2">
++        <div>
++          <SectionLabel>Contact</SectionLabel>
++          <h2 className="font-display text-5xl font-extrabold leading-[0.9] tracking-tighter md:text-8xl">
++            Have a project
++            <br />
++            <span className="text-lime">in mind?</span>
++          </h2>
++          <div className="mt-12 space-y-3 text-paper-dim">
++            <a href={`mailto:${personalInfo.email}`} className="block text-xl text-paper transition-colors hover:text-lime md:text-2xl">
++              {personalInfo.email}
++            </a>
++            <a href={`tel:${personalInfo.phone.replace(/\s/g, "")}`} className="block transition-colors hover:text-lime">
++              {personalInfo.phone}
++            </a>
++          </div>
++        </div>
++
++        <form onSubmit={onSubmit} className="flex flex-col gap-2">
++          <div className="grid gap-2 sm:grid-cols-2 sm:gap-8">
++            <input name="name" required placeholder="Your name" className={field} aria-label="Your name" />
++            <input name="email" type="email" required placeholder="Email address" className={field} aria-label="Email address" />
++          </div>
++          <input name="subject" required placeholder="Subject" className={field} aria-label="Subject" />
++          <textarea name="message" required rows={4} placeholder="Tell me about it…" className={`${field} resize-none`} aria-label="Message" />
++
++          <button
++            type="submit"
++            disabled={status === "sending"}
++            className="group mt-8 inline-flex w-fit items-center gap-3 rounded-full bg-lime px-8 py-4 font-semibold text-ink transition-transform hover:scale-[1.03] disabled:opacity-60"
++          >
++            {status === "sending" ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
++            {status === "sending" ? "Sending" : "Send message"}
++            <ArrowUpRight className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
++          </button>
++          <p role="status" className="min-h-6 text-sm">
++            {status === "sent" && <span className="text-lime">Thanks — I&apos;ll get back to you soon.</span>}
++            {status === "error" && <span className="text-destructive">Something went wrong. Email me directly instead.</span>}
++          </p>
++        </form>
++      </div>
++    </section>
++  )
++}
+diff --git a/components/site/experience.tsx b/components/site/experience.tsx
+new file mode 100644
+index 0000000..40e339c
+--- /dev/null
++++ b/components/site/experience.tsx
+@@ -0,0 +1,62 @@
++"use client"
++
++import { useRef } from "react"
++import { motion, useScroll, useTransform } from "framer-motion"
++import { experiences } from "@/lib/data"
++import { SectionLabel } from "./section-label"
++
++export function Experience() {
++  const ref = useRef<HTMLElement>(null)
++  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.7", "end 0.6"] })
++  const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1])
++  const bigY = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"])
++
++  return (
++    <section ref={ref} id="experience" className="relative mx-auto max-w-[1400px] px-4 py-28 md:px-8 md:py-40">
++      <div className="grid gap-16 md:grid-cols-12">
++        <div className="md:col-span-4">
++          <div className="md:sticky md:top-32">
++            <SectionLabel>Experience</SectionLabel>
++            <motion.h2 style={{ y: bigY }} className="font-display text-5xl font-extrabold leading-[0.9] tracking-tighter md:text-7xl">
++              Where
++              <br />
++              I&apos;ve <span className="text-outline-lime">been</span>
++            </motion.h2>
++          </div>
++        </div>
++
++        <div className="relative md:col-span-8">
++          <div className="absolute left-0 top-0 h-full w-px bg-line" />
++          <motion.div style={{ scaleY: lineScale }} className="absolute left-0 top-0 h-full w-px origin-top bg-lime" />
++          <ol className="space-y-20 pl-8 md:pl-14">
++            {experiences.map((e, i) => (
++              <motion.li
++                key={e.id}
++                initial={{ opacity: 0, y: 40 }}
++                whileInView={{ opacity: 1, y: 0 }}
++                viewport={{ once: true, margin: "-15%" }}
++                transition={{ duration: 0.7, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
++                className="relative"
++              >
++                <span className="absolute -left-[calc(2rem+4.5px)] top-2 h-2.5 w-2.5 rounded-full bg-lime md:-left-[calc(3.5rem+4.5px)]" />
++                <p className="text-xs uppercase tracking-[0.2em] text-paper-dim">{e.period}</p>
++                <h3 className="mt-3 font-display text-3xl font-bold tracking-tight md:text-4xl">
++                  {e.role} <span className="text-lime">@ {e.company}</span>
++                </h3>
++                <p className="mt-4 max-w-2xl leading-relaxed text-paper-dim">{e.description}</p>
++                <ul className="mt-5 space-y-2 text-sm text-paper/80">
++                  {e.achievements.map((a) => (
++                    <li key={a} className="flex gap-3">
++                      <span className="mt-2 h-1 w-3 shrink-0 bg-lime" />
++                      {a}
++                    </li>
++                  ))}
++                </ul>
++              </motion.li>
++            ))}
++          </ol>
++        </div>
++      </div>
++    </section>
++  )
++}
+diff --git a/components/site/footer.tsx b/components/site/footer.tsx
+new file mode 100644
+index 0000000..7d6cfd2
+--- /dev/null
++++ b/components/site/footer.tsx
+@@ -0,0 +1,65 @@
++"use client"
++
++import { useRef } from "react"
++import { motion, useScroll, useTransform } from "framer-motion"
++import { Github, Linkedin, Mail } from "lucide-react"
++import { personalInfo } from "@/lib/data"
++import { Marquee } from "./marquee"
++
++export function Footer() {
++  const ref = useRef<HTMLElement>(null)
++  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] })
++  // Footer content rises from beneath the page as you reach the end.
++  const y = useTransform(scrollYProgress, [0, 1], ["-40%", "0%"])
++
++  const socials = [
++    { icon: Github, href: personalInfo.social.github, label: "GitHub" },
++    { icon: Linkedin, href: personalInfo.social.linkedin, label: "LinkedIn" },
++    { icon: Mail, href: `mailto:${personalInfo.email}`, label: "Email" },
++  ]
++
++  return (
++    <footer ref={ref} className="relative overflow-hidden bg-lime text-ink">
++      <motion.div style={{ y }}>
++        <Marquee baseVelocity={4} className="border-b border-ink/15 py-8 md:py-12">
++          <span className="flex items-center font-display text-6xl font-extrabold tracking-tighter md:text-[10rem]">
++            <span className="px-6 md:px-10">Let&apos;s work together</span>
++            <span className="text-5xl md:text-8xl">✦</span>
++          </span>
++        </Marquee>
++
++        <div className="mx-auto flex max-w-[1400px] flex-col gap-8 px-4 py-10 md:flex-row md:items-center md:justify-between md:px-8">
++          <a href={`mailto:${personalInfo.email}`} className="font-display text-2xl font-bold underline-offset-4 hover:underline md:text-3xl">
++            {personalInfo.email}
++          </a>
++          <div className="flex items-center gap-3">
++            {socials.map(({ icon: Icon, href, label }) => (
++              <a
++                key={label}
++                href={href}
++                target="_blank"
++                rel="noopener noreferrer"
++                aria-label={label}
++                className="flex h-12 w-12 items-center justify-center rounded-full border border-ink/25 transition-colors hover:bg-ink hover:text-lime"
++              >
++                <Icon className="h-5 w-5" />
++              </a>
++            ))}
++            <a
++              href="/Resume.pdf"
++              target="_blank"
++              rel="noopener noreferrer"
++              className="ml-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-lime transition-transform hover:scale-105"
++            >
++              Resume
++            </a>
++          </div>
++        </div>
++        <div className="mx-auto flex max-w-[1400px] justify-between px-4 pb-6 text-xs uppercase tracking-[0.2em] text-ink/60 md:px-8">
++          <span>© {new Date().getFullYear()} {personalInfo.name}</span>
++          <a href="#top" className="hover:text-ink">Back to top ↑</a>
++        </div>
++      </motion.div>
++    </footer>
++  )
++}
+diff --git a/components/site/hero.tsx b/components/site/hero.tsx
+new file mode 100644
+index 0000000..eff0e84
+--- /dev/null
++++ b/components/site/hero.tsx
+@@ -0,0 +1,97 @@
++"use client"
++
++import { useRef } from "react"
++import Image from "next/image"
++import { motion, useScroll, useTransform } from "framer-motion"
++import { ArrowDownRight } from "lucide-react"
++import { personalInfo } from "@/lib/data"
++
++const ease = [0.22, 1, 0.36, 1] as const
++
++export function Hero() {
++  const ref = useRef<HTMLElement>(null)
++  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] })
++
++  // Parallax layers: each moves at its own speed as the hero scrolls away.
++  const lineLeft = useTransform(scrollYProgress, [0, 1], ["0%", "-25%"])
++  const lineRight = useTransform(scrollYProgress, [0, 1], ["0%", "25%"])
++  const photoY = useTransform(scrollYProgress, [0, 1], ["0%", "35%"])
++  const photoScale = useTransform(scrollYProgress, [0, 1], [1, 1.15])
++  const metaY = useTransform(scrollYProgress, [0, 1], ["0%", "-60%"])
++  const fade = useTransform(scrollYProgress, [0, 0.8], [1, 0])
++
++  const [first, last] = personalInfo.name.toUpperCase().split(" ")
++
++  return (
++    <section ref={ref} id="top" className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden pb-10 pt-28">
++      {/* Portrait — slowest layer */}
++      <motion.div
++        style={{ y: photoY, scale: photoScale }}
++        className="absolute left-1/2 top-[18%] h-[46vh] w-[min(78vw,380px)] -translate-x-1/2 md:top-[12%] md:h-[64vh]"
++      >
++        <motion.div
++          initial={{ clipPath: "inset(100% 0% 0% 0%)" }}
++          animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
++          transition={{ duration: 1.2, ease, delay: 0.2 }}
++          className="relative h-full w-full overflow-hidden rounded-[2rem]"
++        >
++          <Image src={personalInfo.avatar} alt={personalInfo.name} fill priority className="object-cover grayscale-[35%]" sizes="380px" />
++          <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
++        </motion.div>
++      </motion.div>
++
++      {/* Floating meta — fastest layer */}
++      <motion.div style={{ y: metaY, opacity: fade }} className="relative z-10 mx-auto mb-auto flex w-full max-w-[1400px] justify-between px-4 text-xs uppercase tracking-[0.2em] text-paper-dim md:px-8">
++        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="flex items-center gap-2">
++          <span className="h-2 w-2 animate-pulse rounded-full bg-lime" /> Available for work
++        </motion.span>
++        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }} className="hidden sm:block">
++          Based in India — Open to remote
++        </motion.span>
++      </motion.div>
++
++      {/* Giant name — two lines slide apart */}
++      <div className="relative z-10 select-none font-display font-extrabold leading-[0.82] tracking-tighter">
++        <motion.div style={{ x: lineLeft }} className="overflow-hidden px-4 md:px-8">
++          <motion.h1
++            initial={{ y: "100%" }}
++            animate={{ y: "0%" }}
++            transition={{ duration: 1, ease, delay: 0.4 }}
++            className="text-[9.6vw] md:text-[9.8vw]"
++          >
++            {first}
++          </motion.h1>
++        </motion.div>
++        <motion.div style={{ x: lineRight }} className="overflow-hidden px-4 text-right md:px-8">
++          <motion.p
++            initial={{ y: "100%" }}
++            animate={{ y: "0%" }}
++            transition={{ duration: 1, ease, delay: 0.5 }}
++            className="text-outline text-[9.6vw] md:text-[9.8vw]"
++          >
++            {last}
++          </motion.p>
++        </motion.div>
++      </div>
++
++      <motion.div
++        style={{ opacity: fade }}
++        initial={{ opacity: 0, y: 20 }}
++        animate={{ opacity: 1, y: 0 }}
++        transition={{ delay: 1.1, duration: 0.8 }}
++        className="relative z-10 mx-auto mt-8 flex w-full max-w-[1400px] flex-col gap-6 px-4 md:flex-row md:items-end md:justify-between md:px-8"
++      >
++        <p className="max-w-md text-base leading-relaxed text-paper-dim md:text-lg">
++          <span className="text-paper">{personalInfo.title}</span> crafting real-time systems, dashboards and seamless API
++          integrations with the MERN stack &amp; Next.js.
++        </p>
++        <a href="#work" className="group flex items-center gap-3 text-sm uppercase tracking-[0.2em]">
++          Scroll to explore
++          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line transition-colors group-hover:border-lime group-hover:bg-lime group-hover:text-ink">
++            <ArrowDownRight className="h-5 w-5" />
++          </span>
++        </a>
++      </motion.div>
++    </section>
++  )
++}
+diff --git a/components/site/marquee.tsx b/components/site/marquee.tsx
+new file mode 100644
+index 0000000..52f85aa
+--- /dev/null
++++ b/components/site/marquee.tsx
+@@ -0,0 +1,64 @@
++"use client"
++
++import { useRef, type ReactNode } from "react"
++import {
++  motion,
++  useAnimationFrame,
++  useMotionValue,
++  useReducedMotion,
++  useScroll,
++  useSpring,
++  useTransform,
++  useVelocity,
++  wrap,
++} from "framer-motion"
++import { cn } from "@/lib/utils"
++
++interface MarqueeProps {
++  children: ReactNode
++  /** Base speed in % of one copy per second. Negative = scroll right. */
++  baseVelocity?: number
++  className?: string
++  /** How many copies to render so the track always overflows the viewport. */
++  copies?: number
++}
++
++/**
++ * Infinite looping marquee. It drifts on its own and speeds up / flips
++ * direction with the page's scroll velocity.
++ */
++export function Marquee({ children, baseVelocity = 3, className, copies = 4 }: MarqueeProps) {
++  const reduce = useReducedMotion()
++  const baseX = useMotionValue(0)
++  const { scrollY } = useScroll()
++  const scrollVelocity = useVelocity(scrollY)
++  const smoothVelocity = useSpring(scrollVelocity, { damping: 50, stiffness: 400 })
++  const velocityFactor = useTransform(smoothVelocity, [0, 1000], [0, 5], { clamp: false })
++  const direction = useRef(1)
++
++  // One copy is (100 / copies)% of the track, so wrapping over that range is seamless.
++  const span = 100 / copies
++  const x = useTransform(baseX, (v) => `${wrap(-span, 0, v)}%`)
++
++  useAnimationFrame((_, delta) => {
++    if (reduce) return
++    let moveBy = direction.current * baseVelocity * (delta / 1000) * (span / 100) * 4
++    const vf = velocityFactor.get()
++    if (vf < 0) direction.current = -1
++    else if (vf > 0) direction.current = 1
++    moveBy += direction.current * moveBy * vf
++    baseX.set(baseX.get() + moveBy)
++  })
++
++  return (
++    <div className={cn("overflow-hidden whitespace-nowrap", className)}>
++      <motion.div className="flex w-max flex-nowrap" style={{ x }}>
++        {Array.from({ length: copies }).map((_, i) => (
++          <div key={i} className="flex shrink-0 items-center" aria-hidden={i > 0}>
++            {children}
++          </div>
++        ))}
++      </motion.div>
++    </div>
++  )
++}
+diff --git a/components/site/nav.tsx b/components/site/nav.tsx
+new file mode 100644
+index 0000000..e7fc61e
+--- /dev/null
++++ b/components/site/nav.tsx
+@@ -0,0 +1,95 @@
++"use client"
++
++import { useState } from "react"
++import Link from "next/link"
++import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion"
++import { personalInfo } from "@/lib/data"
++
++const links = [
++  { label: "Work", href: "#work" },
++  { label: "About", href: "#about" },
++  { label: "Stack", href: "#stack" },
++  { label: "Experience", href: "#experience" },
++  { label: "Contact", href: "#contact" },
++]
++
++export function Nav() {
++  const { scrollY } = useScroll()
++  const [hidden, setHidden] = useState(false)
++  const [open, setOpen] = useState(false)
++
++  useMotionValueEvent(scrollY, "change", (y) => {
++    const prev = scrollY.getPrevious() ?? 0
++    setHidden(y > prev && y > 200 && !open)
++  })
++
++  return (
++    <>
++      <motion.header
++        animate={{ y: hidden ? "-110%" : "0%" }}
++        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
++        className="fixed inset-x-0 top-0 z-50 px-4 pt-4 md:px-8"
++      >
++        <nav className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border border-line bg-ink/70 px-5 py-3 backdrop-blur-xl">
++          <Link href="#top" className="font-display text-lg font-bold tracking-tight">
++            anas<span className="text-lime">.</span>
++          </Link>
++
++          <ul className="hidden items-center gap-8 md:flex">
++            {links.map((l) => (
++              <li key={l.href}>
++                <a href={l.href} className="group relative text-sm text-paper-dim transition-colors hover:text-paper">
++                  {l.label}
++                  <span className="absolute -bottom-1 left-0 h-px w-0 bg-lime transition-all duration-300 group-hover:w-full" />
++                </a>
++              </li>
++            ))}
++          </ul>
++
++          <a
++            href={`mailto:${personalInfo.email}`}
++            className="hidden rounded-full bg-lime px-4 py-2 text-sm font-semibold text-ink transition-transform hover:scale-105 md:inline-block"
++          >
++            Let&apos;s talk
++          </a>
++
++          <button
++            onClick={() => setOpen((o) => !o)}
++            className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 md:hidden"
++            aria-label={open ? "Close menu" : "Open menu"}
++            aria-expanded={open}
++          >
++            <span className={`h-px w-6 bg-paper transition-transform ${open ? "translate-y-[3.5px] rotate-45" : ""}`} />
++            <span className={`h-px w-6 bg-paper transition-transform ${open ? "-translate-y-[3.5px] -rotate-45" : ""}`} />
++          </button>
++        </nav>
++      </motion.header>
++
++      <AnimatePresence>
++        {open && (
++          <motion.div
++            initial={{ clipPath: "circle(0% at 100% 0%)" }}
++            animate={{ clipPath: "circle(150% at 100% 0%)" }}
++            exit={{ clipPath: "circle(0% at 100% 0%)" }}
++            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
++            className="fixed inset-0 z-40 flex flex-col justify-center bg-lime px-6 text-ink md:hidden"
++          >
++            {links.map((l, i) => (
++              <motion.a
++                key={l.href}
++                href={l.href}
++                onClick={() => setOpen(false)}
++                initial={{ opacity: 0, y: 30 }}
++                animate={{ opacity: 1, y: 0 }}
++                transition={{ delay: 0.15 + i * 0.06 }}
++                className="font-display text-5xl font-extrabold leading-tight tracking-tight"
++              >
++                {l.label}
++              </motion.a>
++            ))}
++          </motion.div>
++        )}
++      </AnimatePresence>
++    </>
++  )
++}
+diff --git a/components/site/section-label.tsx b/components/site/section-label.tsx
+new file mode 100644
+index 0000000..51cad61
+--- /dev/null
++++ b/components/site/section-label.tsx
+@@ -0,0 +1,10 @@
++import type { ReactNode } from "react"
++
++export function SectionLabel({ children }: { children: ReactNode }) {
++  return (
++    <div className="mb-6 flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-paper-dim">
++      <span className="h-2 w-2 rounded-full bg-lime" />
++      {children}
++    </div>
++  )
++}
+diff --git a/components/site/stack.tsx b/components/site/stack.tsx
+new file mode 100644
+index 0000000..222d103
+--- /dev/null
++++ b/components/site/stack.tsx
+@@ -0,0 +1,74 @@
++"use client"
++
++import { skills } from "@/lib/data"
++import { Marquee } from "./marquee"
++import { SectionLabel } from "./section-label"
++
++const groups = [
++  { title: "Frontend", items: skills.frontend },
++  { title: "Backend", items: skills.backend },
++  { title: "Databases", items: skills.databases },
++  { title: "DevOps & Cloud", items: skills.devops },
++]
++
++const rowA = [...skills.frontend, ...skills.backend].map((s) => s.name)
++const rowB = [...skills.databases, ...skills.devops, ...skills.tools].map((s) => s.name)
++
++function Pill({ label, filled }: { label: string; filled?: boolean }) {
++  return (
++    <span
++      className={`mx-2 inline-flex items-center rounded-full border px-6 py-3 font-display text-2xl font-bold tracking-tight md:mx-3 md:px-9 md:py-5 md:text-5xl ${
++        filled ? "border-lime bg-lime text-ink" : "border-line text-paper"
++      }`}
++    >
++      {label}
++    </span>
++  )
++}
++
++export function Stack() {
++  return (
++    <section id="stack" className="py-28 md:py-40">
++      <div className="mx-auto mb-16 max-w-[1400px] px-4 md:px-8">
++        <SectionLabel>Tech stack</SectionLabel>
++        <h2 className="font-display text-5xl font-extrabold leading-[0.9] tracking-tighter md:text-8xl">
++          Tools of the <span className="text-outline-lime">trade</span>
++        </h2>
++      </div>
++
++      <div className="flex flex-col gap-4 md:gap-6">
++        <Marquee baseVelocity={-2.5}>
++          {rowA.map((s, i) => (
++            <Pill key={s} label={s} filled={i % 4 === 0} />
++          ))}
++        </Marquee>
++        <Marquee baseVelocity={2.5}>
++          {rowB.map((s, i) => (
++            <Pill key={s} label={s} filled={i % 4 === 2} />
++          ))}
++        </Marquee>
++      </div>
++
++      <div className="mx-auto mt-20 grid max-w-[1400px] gap-px overflow-hidden rounded-3xl border border-line bg-line px-0 sm:grid-cols-2 lg:grid-cols-4 md:mx-8 mx-4">
++        {groups.map((g) => (
++          <div key={g.title} className="bg-ink p-6 md:p-8">
++            <h3 className="font-display text-xl font-bold">{g.title}</h3>
++            <ul className="mt-6 space-y-4">
++              {g.items.map((s) => (
++                <li key={s.name}>
++                  <div className="flex justify-between text-sm">
++                    <span>{s.name}</span>
++                    <span className="text-paper-dim">{s.level}%</span>
++                  </div>
++                  <div className="mt-2 h-px w-full bg-line">
++                    <div className="h-px bg-lime" style={{ width: `${s.level}%` }} />
++                  </div>
++                </li>
++              ))}
++            </ul>
++          </div>
++        ))}
++      </div>
++    </section>
++  )
++}
+diff --git a/components/site/work.tsx b/components/site/work.tsx
+new file mode 100644
+index 0000000..a48574b
+--- /dev/null
++++ b/components/site/work.tsx
+@@ -0,0 +1,92 @@
++"use client"
++
++import { useRef } from "react"
++import Image from "next/image"
++import { motion, useScroll, useTransform } from "framer-motion"
++import { ArrowUpRight } from "lucide-react"
++import { projects } from "@/lib/data"
++import { SectionLabel } from "./section-label"
++
++type Project = (typeof projects)[number]
++
++function ProjectRow({ project, index }: { project: Project; index: number }) {
++  const ref = useRef<HTMLElement>(null)
++  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] })
++  // Image drifts inside its frame (classic parallax window), title drifts the other way.
++  const imgY = useTransform(scrollYProgress, [0, 1], ["-12%", "12%"])
++  const titleY = useTransform(scrollYProgress, [0, 1], ["40%", "-40%"])
++  const flip = index % 2 === 1
++  const soon = "comingsoon" in project && project.comingsoon
++  const href = !soon && project.live ? project.live : undefined
++
++  return (
++    <article ref={ref} className="grid items-center gap-8 md:grid-cols-12 md:gap-10">
++      <a
++        href={href}
++        target={href ? "_blank" : undefined}
++        rel="noopener noreferrer"
++        className={`group relative block aspect-[4/3] overflow-hidden rounded-[1.75rem] bg-ink-2 md:col-span-7 ${flip ? "md:order-2 md:col-start-6" : ""}`}
++      >
++        <motion.div style={{ y: imgY }} className="absolute -inset-y-[14%] inset-x-0">
++          <Image
++            src={project.image}
++            alt={project.name}
++            fill
++            sizes="(min-width: 768px) 58vw, 100vw"
++            className="object-cover transition-transform duration-700 group-hover:scale-105"
++          />
++        </motion.div>
++        <div className="absolute inset-0 bg-ink/10 transition-colors group-hover:bg-transparent" />
++        {href && (
++          <span className="absolute bottom-5 right-5 flex h-14 w-14 scale-75 items-center justify-center rounded-full bg-lime text-ink opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
++            <ArrowUpRight className="h-6 w-6" />
++          </span>
++        )}
++        {soon && (
++          <span className="absolute left-5 top-5 rounded-full bg-ink/80 px-3 py-1 text-xs uppercase tracking-widest text-lime backdrop-blur">
++            Coming soon
++          </span>
++        )}
++      </a>
++
++      <motion.div style={{ y: titleY }} className={`md:col-span-5 ${flip ? "md:order-1 md:col-start-1" : ""}`}>
++        <span className="font-display text-sm text-lime">{String(index + 1).padStart(2, "0")} / {project.category}</span>
++        <h3 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">{project.name}</h3>
++        <p className="mt-4 text-paper-dim leading-relaxed">{project.description}</p>
++        <ul className="mt-6 flex flex-wrap gap-2">
++          {project.technologies.slice(0, 5).map((t) => (
++            <li key={t} className="rounded-full border border-line px-3 py-1 text-xs text-paper-dim">
++              {t}
++            </li>
++          ))}
++        </ul>
++      </motion.div>
++    </article>
++  )
++}
++
++export function Work() {
++  return (
++    <section id="work" className="mx-auto max-w-[1400px] px-4 py-28 md:px-8 md:py-40">
++      <div className="mb-20 flex flex-col justify-between gap-6 md:mb-32 md:flex-row md:items-end">
++        <div>
++          <SectionLabel>Selected work</SectionLabel>
++          <h2 className="font-display text-5xl font-extrabold leading-[0.9] tracking-tighter md:text-8xl">
++            Things I&apos;ve
++            <br />
++            <span className="text-outline-lime">built</span>
++          </h2>
++        </div>
++        <p className="max-w-sm text-paper-dim">
++          From tokenized real-estate platforms to real-time collaboration tools — a few projects I&apos;m proud of.
++        </p>
++      </div>
++
++      <div className="flex flex-col gap-28 md:gap-44">
++        {projects.map((p, i) => (
++          <ProjectRow key={p.id} project={p} index={i} />
++        ))}
++      </div>
++    </section>
++  )
++}
+diff --git a/components/skill-bar.tsx b/components/skill-bar.tsx
+deleted file mode 100644
+index d77d768..0000000
+--- a/components/skill-bar.tsx
++++ /dev/null
+@@ -1,39 +0,0 @@
+-"use client"
+-
+-import { motion, useInView } from "framer-motion"
+-import { useRef } from "react"
+-
+-interface SkillBarProps {
+-  name: string
+-  level: number
+-  index: number
+-}
+-
+-export function SkillBar({ name, level, index }: SkillBarProps) {
+-  const ref = useRef<HTMLDivElement>(null)
+-  const isInView = useInView(ref, { once: true, margin: "-50px" })
+-
+-  return (
+-    <div ref={ref} className="space-y-2">
+-      <div className="flex items-center justify-between">
+-        <span className="text-sm font-medium text-foreground">{name}</span>
+-        <span className="text-sm text-muted-foreground">{level}%</span>
+-      </div>
+-      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+-        <motion.div
+-          initial={{ width: 0 }}
+-          animate={{ width: isInView ? `${level}%` : 0 }}
+-          transition={{ duration: 0.8, delay: index * 0.1, ease: "easeOut" }}
+-          className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full relative"
+-        >
+-          <motion.div
+-            initial={{ opacity: 0 }}
+-            animate={{ opacity: isInView ? 1 : 0 }}
+-            transition={{ duration: 0.3, delay: index * 0.1 + 0.5 }}
+-            className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full shadow-lg shadow-primary/50"
+-          />
+-        </motion.div>
+-      </div>
+-    </div>
+-  )
+-}
+diff --git a/components/skill-category.tsx b/components/skill-category.tsx
+deleted file mode 100644
+index 5e0f43c..0000000
+--- a/components/skill-category.tsx
++++ /dev/null
+@@ -1,50 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import { SkillBar } from "./skill-bar"
+-import { Code2, Server, Database, Cloud, Wrench, type LucideIcon } from "lucide-react"
+-
+-interface Skill {
+-  name: string
+-  level: number
+-}
+-
+-interface SkillCategoryProps {
+-  title: string
+-  skills: Skill[]
+-  icon: string
+-  index: number
+-}
+-
+-const iconMap: Record<string, LucideIcon> = {
+-  frontend: Code2,
+-  backend: Server,
+-  databases: Database,
+-  devops: Cloud,
+-  tools: Wrench,
+-}
+-
+-export function SkillCategory({ title, skills, icon, index }: SkillCategoryProps) {
+-  const Icon = iconMap[icon] || Code2
+-
+-  return (
+-    <motion.div
+-      initial={{ opacity: 0, y: 20 }}
+-      animate={{ opacity: 1, y: 0 }}
+-      transition={{ duration: 0.4, delay: index * 0.1 }}
+-      className="glass-card p-6 rounded-xl"
+-    >
+-      <div className="flex items-center gap-3 mb-6">
+-        <div className="p-2 rounded-lg bg-primary/10">
+-          <Icon className="h-5 w-5 text-primary" />
+-        </div>
+-        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+-      </div>
+-      <div className="space-y-4">
+-        {skills.map((skill, i) => (
+-          <SkillBar key={skill.name} name={skill.name} level={skill.level} index={i} />
+-        ))}
+-      </div>
+-    </motion.div>
+-  )
+-}
+diff --git a/components/tech-carousel.tsx b/components/tech-carousel.tsx
+deleted file mode 100644
+index a19377f..0000000
+--- a/components/tech-carousel.tsx
++++ /dev/null
+@@ -1,64 +0,0 @@
+-"use client"
+-
+-import { motion } from "framer-motion"
+-import {
+-  SiNextdotjs,
+-  SiReact,
+-  SiNodedotjs,
+-  SiMongodb,
+-  SiTypescript,
+-  SiSocketdotio,
+-  SiTailwindcss,
+-  SiStripe,
+-  SiShadcnui,
+-  SiExpress,
+-  SiJavascript,
+-  SiReactbootstrap,
+-} from "react-icons/si"
+-
+-const technologies = [
+-  { name: "Java Script" , Icon: SiJavascript },
+-
+-  { name: "Next.js", Icon: SiNextdotjs },
+-  { name: "React", Icon: SiReact },
+-  { name: "Node.js", Icon: SiNodedotjs },
+-  { name: "Express js", Icon: SiExpress },
+-
+-  { name: "MongoDB", Icon: SiMongodb },
+-  { name: "TypeScript", Icon: SiTypescript },
+-  { name: "Socket.IO", Icon: SiSocketdotio },
+-  { name: "Tailwind Css", Icon: SiTailwindcss },
+-  {name : "Bootstrap" , Icon : SiReactbootstrap},
+-  { name: "Shad Cn", Icon: SiShadcnui }
+-]
+-
+-export function TechCarousel() {
+-  return (
+-    <div className="relative overflow-hidden py-8">
+-      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10" />
+-      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10" />
+-
+-      <motion.div
+-        className="flex gap-12"
+-        animate={{
+-          x: [0, -1000],
+-        }}
+-        transition={{
+-          x: {
+-            repeat: Number.POSITIVE_INFINITY,
+-            repeatType: "loop",
+-            duration: 20,
+-            ease: "linear",
+-          },
+-        }}
+-      >
+-        {[...technologies, ...technologies, ...technologies].map((tech, index) => (
+-          <div key={`${tech.name}-${index}`} className="flex items-center gap-3 shrink-0">
+-            <tech.Icon className="h-8 w-8 text-muted-foreground" />
+-            <span className="text-muted-foreground font-medium whitespace-nowrap">{tech.name}</span>
+-          </div>
+-        ))}
+-      </motion.div>
+-    </div>
+-  )
+-}
+diff --git a/components/theme-provider.tsx b/components/theme-provider.tsx
+deleted file mode 100644
+index f2fab10..0000000
+--- a/components/theme-provider.tsx
++++ /dev/null
+@@ -1,50 +0,0 @@
+-"use client"
+-
+-import type * as React from "react"
+-import { createContext, useContext, useEffect, useState } from "react"
+-
+-type Theme = "dark" | "light" | "neon"
+-
+-interface ThemeContextType {
+-  theme: Theme
+-  setTheme: (theme: Theme) => void
+-}
+-
+-const ThemeContext = createContext<ThemeContextType>({
+-  theme: "dark",
+-  setTheme: () => {},
+-})
+-
+-interface ThemeProviderProps {
+-  children: React.ReactNode
+-  defaultTheme?: Theme
+-}
+-
+-export function ThemeProvider({ children, defaultTheme = "dark" }: ThemeProviderProps) {
+-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+-  const [mounted, setMounted] = useState(false)
+-
+-  useEffect(() => {
+-    setMounted(true)
+-    const savedTheme = localStorage.getItem("portfolio-theme") as Theme
+-    if (savedTheme && ["dark", "light", "neon"].includes(savedTheme)) {
+-      setTheme(savedTheme)
+-    }
+-  }, [])
+-
+-  useEffect(() => {
+-    if (!mounted) return
+-
+-    const root = document.documentElement
+-    root.classList.remove("dark", "light", "neon")
+-    root.classList.add(theme)
+-    localStorage.setItem("portfolio-theme", theme)
+-  }, [theme, mounted])
+-
+-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>
+-}
+-
+-export function useTheme() {
+-  const context = useContext(ThemeContext)
+-  return context
+-}
+diff --git a/components/theme-toggle.tsx b/components/theme-toggle.tsx
+deleted file mode 100644
+index c8ae970..0000000
+--- a/components/theme-toggle.tsx
++++ /dev/null
+@@ -1,51 +0,0 @@
+-"use client"
+-
+-import { motion, AnimatePresence } from "framer-motion"
+-import { Sun, Moon, Sparkles } from "lucide-react"
+-import { Button } from "@/components/ui/button"
+-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+-import { useTheme } from "./theme-provider"
+-
+-const themes = [
+-  { value: "dark", label: "Dark", icon: Moon },
+-  { value: "light", label: "Light", icon: Sun },
+-  { value: "neon", label: "Neon", icon: Sparkles },
+-] as const
+-
+-export function ThemeToggle() {
+-  const { theme, setTheme } = useTheme()
+-  const CurrentIcon = themes.find((t) => t.value === theme)?.icon || Moon
+-
+-  return (
+-    <DropdownMenu>
+-      <DropdownMenuTrigger asChild>
+-        <Button variant="ghost" size="icon" className="relative hover:text-primary">
+-          <AnimatePresence mode="wait">
+-            <motion.div
+-              key={theme}
+-              initial={{ scale: 0, rotate: -180 }}
+-              animate={{ scale: 1, rotate: 0 }}
+-              exit={{ scale: 0, rotate: 180 }}
+-              transition={{ duration: 0.2 }}
+-            >
+-              <CurrentIcon className="h-5 w-5" />
+-            </motion.div>
+-          </AnimatePresence>
+-          <span className="sr-only">Toggle theme</span>
+-        </Button>
+-      </DropdownMenuTrigger>
+-      <DropdownMenuContent align="end" className="glass-card border-border">
+-        {themes.map(({ value, label, icon: Icon }) => (
+-          <DropdownMenuItem
+-            key={value}
+-            onClick={() => setTheme(value)}
+-            className={`flex items-center gap-2 cursor-pointer ${theme === value ? "text-primary" : ""}`}
+-          >
+-            <Icon className="h-4 w-4" />
+-            {label}
+-          </DropdownMenuItem>
+-        ))}
+-      </DropdownMenuContent>
+-    </DropdownMenu>
+-  )
+-}
+diff --git a/components/typing-animation.tsx b/components/typing-animation.tsx
+deleted file mode 100644
+index 48b80a4..0000000
+--- a/components/typing-animation.tsx
++++ /dev/null
+@@ -1,51 +0,0 @@
+-"use client"
+-
+-import { useState, useEffect } from "react"
+-import { motion } from "framer-motion"
+-
+-interface TypingAnimationProps {
+-  words: string[]
+-  className?: string
+-}
+-
+-export function TypingAnimation({ words, className }: TypingAnimationProps) {
+-  const [currentWordIndex, setCurrentWordIndex] = useState(0)
+-  const [currentText, setCurrentText] = useState("")
+-  const [isDeleting, setIsDeleting] = useState(false)
+-
+-  useEffect(() => {
+-    const word = words[currentWordIndex]
+-    const timeout = setTimeout(
+-      () => {
+-        if (!isDeleting) {
+-          if (currentText.length < word.length) {
+-            setCurrentText(word.slice(0, currentText.length + 1))
+-          } else {
+-            setTimeout(() => setIsDeleting(true), 2000)
+-          }
+-        } else {
+-          if (currentText.length > 0) {
+-            setCurrentText(word.slice(0, currentText.length - 1))
+-          } else {
+-            setIsDeleting(false)
+-            setCurrentWordIndex((prev) => (prev + 1) % words.length)
+-          }
+-        }
+-      },
+-      isDeleting ? 50 : 100,
+-    )
+-
+-    return () => clearTimeout(timeout)
+-  }, [currentText, isDeleting, currentWordIndex, words])
+-
+-  return (
+-    <span className={className}>
+-      {currentText}
+-      <motion.span
+-        animate={{ opacity: [1, 0] }}
+-        transition={{ duration: 0.5, repeat: Number.POSITIVE_INFINITY, repeatType: "reverse" }}
+-        className="inline-block w-0.5 h-6 bg-primary ml-1 align-middle"
+-      />
+-    </span>
+-  )
+-}
+diff --git a/package-lock.json b/package-lock.json
+index 76f8771..956ef68 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -53,7 +53,7 @@
+         "framer-motion": "latest",
+         "input-otp": "1.4.1",
+         "lucide-react": "^0.454.0",
+-        "next": "16.0.3",
++        "next": "16.0.10",
+         "next-themes": "^0.4.6",
+         "nodemailer": "^7.0.11",
+         "react": "19.2.0",
+@@ -3801,15 +3801,15 @@
+       }
+     },
+     "node_modules/@next/env": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.0.3.tgz",
+-      "integrity": "sha512-IqgtY5Vwsm14mm/nmQaRMmywCU+yyMIYfk3/MHZ2ZTJvwVbBn3usZnjMi1GacrMVzVcAxJShTCpZlPs26EdEjQ==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.0.10.tgz",
++      "integrity": "sha512-8tuaQkyDVgeONQ1MeT9Mkk8pQmZapMKFh5B+OrFUlG3rVmYTXcXlBetBgTurKXGaIZvkoqRT9JL5K3phXcgang==",
+       "license": "MIT"
+     },
+     "node_modules/@next/swc-darwin-arm64": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.0.3.tgz",
+-      "integrity": "sha512-MOnbd92+OByu0p6QBAzq1ahVWzF6nyfiH07dQDez4/Nku7G249NjxDVyEfVhz8WkLiOEU+KFVnqtgcsfP2nLXg==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.0.10.tgz",
++      "integrity": "sha512-4XgdKtdVsaflErz+B5XeG0T5PeXKDdruDf3CRpnhN+8UebNa5N2H58+3GDgpn/9GBurrQ1uWW768FfscwYkJRg==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -3823,9 +3823,9 @@
+       }
+     },
+     "node_modules/@next/swc-darwin-x64": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.0.3.tgz",
+-      "integrity": "sha512-i70C4O1VmbTivYdRlk+5lj9xRc2BlK3oUikt3yJeHT1unL4LsNtN7UiOhVanFdc7vDAgZn1tV/9mQwMkWOJvHg==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.0.10.tgz",
++      "integrity": "sha512-spbEObMvRKkQ3CkYVOME+ocPDFo5UqHb8EMTS78/0mQ+O1nqE8toHJVioZo4TvebATxgA8XMTHHrScPrn68OGw==",
+       "cpu": [
+         "x64"
+       ],
+@@ -3839,9 +3839,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-arm64-gnu": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.0.3.tgz",
+-      "integrity": "sha512-O88gCZ95sScwD00mn/AtalyCoykhhlokxH/wi1huFK+rmiP5LAYVs/i2ruk7xST6SuXN4NI5y4Xf5vepb2jf6A==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.0.10.tgz",
++      "integrity": "sha512-uQtWE3X0iGB8apTIskOMi2w/MKONrPOUCi5yLO+v3O8Mb5c7K4Q5KD1jvTpTF5gJKa3VH/ijKjKUq9O9UhwOYw==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -3855,9 +3855,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-arm64-musl": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.0.3.tgz",
+-      "integrity": "sha512-CEErFt78S/zYXzFIiv18iQCbRbLgBluS8z1TNDQoyPi8/Jr5qhR3e8XHAIxVxPBjDbEMITprqELVc5KTfFj0gg==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.0.10.tgz",
++      "integrity": "sha512-llA+hiDTrYvyWI21Z0L1GiXwjQaanPVQQwru5peOgtooeJ8qx3tlqRV2P7uH2pKQaUfHxI/WVarvI5oYgGxaTw==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -3871,9 +3871,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-x64-gnu": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.0.3.tgz",
+-      "integrity": "sha512-Tc3i+nwt6mQ+Dwzcri/WNDj56iWdycGVh5YwwklleClzPzz7UpfaMw1ci7bLl6GRYMXhWDBfe707EXNjKtiswQ==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.0.10.tgz",
++      "integrity": "sha512-AK2q5H0+a9nsXbeZ3FZdMtbtu9jxW4R/NgzZ6+lrTm3d6Zb7jYrWcgjcpM1k8uuqlSy4xIyPR2YiuUr+wXsavA==",
+       "cpu": [
+         "x64"
+       ],
+@@ -3887,9 +3887,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-x64-musl": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.0.3.tgz",
+-      "integrity": "sha512-zTh03Z/5PBBPdTurgEtr6nY0vI9KR9Ifp/jZCcHlODzwVOEKcKRBtQIGrkc7izFgOMuXDEJBmirwpGqdM/ZixA==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.0.10.tgz",
++      "integrity": "sha512-1TDG9PDKivNw5550S111gsO4RGennLVl9cipPhtkXIFVwo31YZ73nEbLjNC8qG3SgTz/QZyYyaFYMeY4BKZR/g==",
+       "cpu": [
+         "x64"
+       ],
+@@ -3903,9 +3903,9 @@
+       }
+     },
+     "node_modules/@next/swc-win32-arm64-msvc": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.0.3.tgz",
+-      "integrity": "sha512-Jc1EHxtZovcJcg5zU43X3tuqzl/sS+CmLgjRP28ZT4vk869Ncm2NoF8qSTaL99gh6uOzgM99Shct06pSO6kA6g==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.0.10.tgz",
++      "integrity": "sha512-aEZIS4Hh32xdJQbHz121pyuVZniSNoqDVx1yIr2hy+ZwJGipeqnMZBJHyMxv2tiuAXGx6/xpTcQJ6btIiBjgmg==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -3919,9 +3919,9 @@
+       }
+     },
+     "node_modules/@next/swc-win32-x64-msvc": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.0.3.tgz",
+-      "integrity": "sha512-N7EJ6zbxgIYpI/sWNzpVKRMbfEGgsWuOIvzkML7wxAAZhPk1Msxuo/JDu1PKjWGrAoOLaZcIX5s+/pF5LIbBBg==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.0.10.tgz",
++      "integrity": "sha512-E+njfCoFLb01RAFEnGZn6ERoOqhK1Gl3Lfz1Kjnj0Ulfu7oJbuMyvBKNj/bw8XZnenHDASlygTjZICQW+rYW1Q==",
+       "cpu": [
+         "x64"
+       ],
+@@ -6769,6 +6769,7 @@
+       "version": "19.2.7",
+       "resolved": "https://registry.npmjs.org/@types/react/-/react-19.2.7.tgz",
+       "integrity": "sha512-MWtvHrGZLFttgeEj28VXHxpmwYbor/ATPYbBfSFZEIRK0ecCFLl2Qo55z52Hss+UV9CRN7trSeq1zbgx7YDWWg==",
++      "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "csstype": "^3.2.2"
+@@ -6778,7 +6779,7 @@
+       "version": "19.2.3",
+       "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.2.3.tgz",
+       "integrity": "sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==",
+-      "devOptional": true,
++      "dev": true,
+       "license": "MIT",
+       "peerDependencies": {
+         "@types/react": "^19.2.0"
+@@ -10628,12 +10629,12 @@
+       "license": "MIT"
+     },
+     "node_modules/next": {
+-      "version": "16.0.3",
+-      "resolved": "https://registry.npmjs.org/next/-/next-16.0.3.tgz",
+-      "integrity": "sha512-Ka0/iNBblPFcIubTA1Jjh6gvwqfjrGq1Y2MTI5lbjeLIAfmC+p5bQmojpRZqgHHVu5cG4+qdIiwXiBSm/8lZ3w==",
++      "version": "16.0.10",
++      "resolved": "https://registry.npmjs.org/next/-/next-16.0.10.tgz",
++      "integrity": "sha512-RtWh5PUgI+vxlV3HdR+IfWA1UUHu0+Ram/JBO4vWB54cVPentCD0e+lxyAYEsDTqGGMg7qpjhKh6dc6aW7W/sA==",
+       "license": "MIT",
+       "dependencies": {
+-        "@next/env": "16.0.3",
++        "@next/env": "16.0.10",
+         "@swc/helpers": "0.5.15",
+         "caniuse-lite": "^1.0.30001579",
+         "postcss": "8.4.31",
+@@ -10646,14 +10647,14 @@
+         "node": ">=20.9.0"
+       },
+       "optionalDependencies": {
+-        "@next/swc-darwin-arm64": "16.0.3",
+-        "@next/swc-darwin-x64": "16.0.3",
+-        "@next/swc-linux-arm64-gnu": "16.0.3",
+-        "@next/swc-linux-arm64-musl": "16.0.3",
+-        "@next/swc-linux-x64-gnu": "16.0.3",
+-        "@next/swc-linux-x64-musl": "16.0.3",
+-        "@next/swc-win32-arm64-msvc": "16.0.3",
+-        "@next/swc-win32-x64-msvc": "16.0.3",
++        "@next/swc-darwin-arm64": "16.0.10",
++        "@next/swc-darwin-x64": "16.0.10",
++        "@next/swc-linux-arm64-gnu": "16.0.10",
++        "@next/swc-linux-arm64-musl": "16.0.10",
++        "@next/swc-linux-x64-gnu": "16.0.10",
++        "@next/swc-linux-x64-musl": "16.0.10",
++        "@next/swc-win32-arm64-msvc": "16.0.10",
++        "@next/swc-win32-x64-msvc": "16.0.10",
+         "sharp": "^0.34.4"
+       },
+       "peerDependencies": {
+@@ -11149,6 +11150,7 @@
+       "version": "8.5.6",
+       "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.6.tgz",
+       "integrity": "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==",
++      "dev": true,
+       "funding": [
+         {
+           "type": "opencollective",
+@@ -12766,6 +12768,7 @@
+       "version": "4.1.17",
+       "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.1.17.tgz",
+       "integrity": "sha512-j9Ee2YjuQqYT9bbRTfTZht9W/ytp5H+jJpZKiYdP/bpnXARAuELt9ofP0lPnmHjbga7SNQIxdTAXCmtKVYjN+Q==",
++      "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/tailwindcss-animate": {
+-- 
+2.43.0
+

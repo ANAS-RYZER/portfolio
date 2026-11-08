@@ -1,16 +1,16 @@
 export const personalInfo = {
   name: "Mohamad Anas",
-  title: "Full Stack Developer",
-  avatar: "/placeholder.jpeg",
-  taglines: ["Full Stack Developer", "API Integrations", "Realtime Systems", "MERN + Next.js"],
+  title: "CTO at Ryzer X & Co-founder of Lumo",
+  avatar: "/avatar.webp",
+  taglines: ["CTO @ Ryzer X", "Co-founder @ Lumo", "Full Stack Engineer", "AI Products", "Realtime Systems"],
   about:
-    "I build accessible, pixel-perfect digital experiences for the web. Currently building scalable applications with focus on real-time features, admin dashboards, and seamless API integrations.",
+    "CTO at Ryzer X. I lead engineering and build AI-powered products end to end — from grounded LLM search over real-estate data to multi-tenant platforms used by schools.",
   email: "anasmohamad369@gmail.com",
   phone: "+91 9110334346",
   location: "Remote",
   social: {
     github: "https://github.com/anasmohamad369",
-    linkedin: "https://linkedin.com/in/anas-mohamad369",
+    linkedin: "https://www.linkedin.com/in/anas-mohamad369/",
     twitter: "https://twitter.com/anasmohamad369",
   },
 }
@@ -18,191 +18,169 @@ export const personalInfo = {
 export const experiences = [
   {
     id: 1,
-    role: "Full Stack Developer",
-    company: "Ryzer",
-    period: "2024 — Present",
+    role: "CTO",
+    company: "Ryzer X",
+    period: "Jun 2026 — Present",
     description:
-      "Building scalable user and admin platforms for real estate tokenization. Working with MERN stack and Next.js to deliver production-ready applications with reusable form architectures.",
+      "Leading engineering and product architecture. Owning the stack end to end: AI services, APIs, web apps, infrastructure and deployment.",
     achievements: [
-      "Developed user-facing asset investment platform with complex filtering and search",
-      "Built comprehensive admin dashboard for asset and user management",
-      "Implemented reusable form config system using React Hook Form",
-      "Integrated real-time data updates and analytics dashboards",
+      "Set the technical direction and architecture across RyzerX, ACOT and Zuno Pay",
+      "Built ACOT: AI property intelligence plus a lead-scoring CRM for brokers",
+      "Leading Zuno Pay, a cross-border payments platform",
+      "Handle clients directly, from scoping and demos to delivery",
+      "Lead and train the engineering team, including onboarding new hires",
+      "Own ISO/IEC 27001 documentation: ISMS policies, procedures and audit records",
+      "Built and run cloud deployments with Docker and Cloud Build pipelines",
+      "Load-tested and tuned services for production traffic",
     ],
-    technologies: ["React", "Next.js", "Node.js", "MongoDB", "React Hook Form", "TypeScript" , "Shadcn UI" , "Recharts" , "Socket.io" , "Tailwind CSS" , "Express.js" , "Integration of SDKs"],
+    technologies: ["Next.js", "NestJS", "Python", "FastAPI", "PostgreSQL", "Docker", "GCP"],
+  },
+  {
+    id: 4,
+    role: "Co-founder",
+    company: "Lumo",
+    period: "Present",
+    description:
+      "Co-founded Lumo (lumokido.in), a learning platform for schools. Lumo books link to quizzes, games and labs through QR codes, with leaderboards for students and dashboards for schools.",
+    achievements: [
+      "Built Lumo OS: multi-tenant school platform with per-school data isolation",
+      "Shipped Spell Bee, science labs, quizzes and a Creative Studio for students",
+      "Run product and engineering alongside the founding team",
+    ],
+    technologies: ["Next.js", "NestJS", "Prisma", "PostgreSQL", "Redis"],
   },
   {
     id: 2,
+    role: "Full Stack Developer",
+    company: "Ryzer",
+    period: "2024 — 2026",
+    description:
+      "Built the user and admin platforms for real estate tokenization with the MERN stack and Next.js, including a reusable form architecture.",
+    achievements: [
+      "Developed the user-facing asset investment platform with complex filtering and search",
+      "Built the admin dashboard for asset, user and KYC management",
+      "Implemented a reusable form config system using React Hook Form",
+      "Integrated real-time data updates and analytics dashboards",
+    ],
+    technologies: ["React", "Next.js", "Node.js", "MongoDB", "TypeScript", "Socket.io"],
+  },
+  {
+    id: 3,
     role: "Freelance Developer (MVP)",
     company: "1xFinance",
     period: "2025",
     description:
-      "Built the user-facing MVP for a fintech lending platform. Developed loan application flows against various asset types with blockchain integration.",
+      "Built the user-facing MVP for a fintech lending platform with loan application flows against various asset types.",
     achievements: [
-      "Delivered complete user model for loan application platform",
+      "Delivered the complete user flow for the loan application platform",
       "Built multi-step loan application flows for different asset types",
       "Integrated with NBFC partners for rate comparison",
     ],
     technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
   },
-  {
-    id: 3,
-    role: "Freelance Developer ",
-    company: "Glamease",
-    period: "2025",
-    description:
-      "Delivered end-to-end web solutions for various clients, from e-commerce platforms to SaaS applications.",
-    achievements: [
-      "Built responsive UI components with React and Tailwind CSS",
-      "Improved application performance by 40%",
-      "Collaborated with backend team on API design",
-    ],
-    technologies: ["React", "TypeScript", "Tailwind CSS", "Redux"],
-  },
- 
 ]
 
 export const projects = [
   {
     id: 1,
-    name: "Ryzer User Platform",
+    name: "ACOT AI",
     description:
-      "Real estate asset tokenization platform where users can browse, filter, and invest in residential and commercial properties. Features asset categories, yield calculations, and investment tracking.",
-    image: "/real-estate-investment-platform-dashboard-with-pro.jpg",
-    technologies: ["Next.js", "React Hook Form", "MongoDB", "Node.js", "TypeScript"],
-    category: "Web Apps",
-    github: "https://github.com",
-    live: "https://user.ryzer.app",
-    role: "Full Stack Developer at Ryzer",
-        comingsoon : false
-
+      "AI property intelligence for the Dubai market. Ask in plain language and get grounded answers: project and area comparisons, rental search, investment summaries and brochure Q&A, backed by PostgreSQL, vector search and validated read-only tools.",
+    image: "/acot-ai.png",
+    technologies: ["Python", "FastAPI", "LLM + RAG", "PostgreSQL", "Next.js"],
+    category: "AI",
+    github: "",
+    live: "",
+    role: "CTO",
+    comingsoon: false,
   },
   {
     id: 2,
-    name: "Ryzer Admin Dashboard",
+    name: "ACOT CRM",
     description:
-      "Comprehensive admin panel for managing real estate assets, user investments, KYC verification, and platform analytics. Built with reusable form configurations for rapid feature development.",
-    image: "/admin-dashboard-with-analytics-charts-and-data-tab.jpg",
-    technologies: ["React", "Node.js", "MongoDB", "React Hook Form", "Recharts"],
-    category: "Dashboards",
-    github: "https://github.com",
-    live: "https://admin.ryzer.app",
-    role: "Full Stack Developer at Ryzer",
-        comingsoon : false
-
+      "The agent side of ACOT. AI-scored leads (hot, warm, plain) are offered to brokers by plan tier, claimed with credits, and worked in a drag-and-drop deals pipeline with an AI Autopilot that drafts follow-ups for one-click approval.",
+    image: "/acot-crm.png",
+    technologies: ["NestJS", "Next.js", "PostgreSQL", "AI Autopilot", "Cloud Run"],
+    category: "CRM",
+    github: "",
+    live: "",
+    role: "CTO",
+    comingsoon: false,
   },
   {
     id: 3,
-    name: "1xFinance",
+    name: "RyzerX",
     description:
-      "Fintech lending platform MVP enabling users to get loans against gold, land, mutual funds, and other assets. Features multi-step loan applications, NBFC rate comparisons, and asset valuation flows.",
-    image: "/fintech-loan-application-platform-with-asset-cards.jpg",
-    technologies: ["Next.js", "TypeScript", "Tailwind CSS", "React"],
-    category: "Web Apps",
-    github: "https://github.com",
-    live: "https://1xfinance.com",
-    role: "Freelance Developer (MVP)",
-    comingsoon : false
+      "RWA fractional investment platform regulated by VARA, Dubai. Users own fractions of premium real estate and 24K gold backed by insured vaults, with blockchain-backed tokens they can trade anytime.",
+    image: "/ryzerx-platform.png",
+    technologies: ["Next.js", "Node.js", "Blockchain", "TypeScript", "Tailwind CSS"],
+    category: "Fintech",
+    github: "",
+    live: "https://user.ryzer.app",
+    role: "CTO at Ryzer X",
+    comingsoon: false,
   },
   {
     id: 4,
-    name: "DevSync",
-    description:
-      "A Trello + Slack clone for developer team collaboration. Features real-time updates, kanban boards, and team messaging.",
-    image: "/project-management-dashboard-dark-theme.jpg",
-    technologies: ["Next.js", "Socket.IO", "MongoDB", "Tailwind CSS"],
-    category: "Real-time",
-    github: "https://github.com",
-    live: "https://example.com",
-    role: "Full Stack Developer",
-    comingsoon : true
-  },
-  {
-    id: 5,
-    name: "SpendMoney App",
-    description: "Personal finance tracker with budget management, expense categorization, and visual analytics.",
-    image: "/finance-app-dashboard-dark-neon.jpg",
-    technologies: ["React", "Node.js", "MongoDB", "Chart.js"],
-    category: "Web Apps",
-    github: "https://github.com",
-    live: "https://example.com",
-    role: "Full Stack Developer",
-        comingsoon : true
-
+    name: "Zuno Pay",
+    description: "Cross-border payments platform for moving money between countries fast and at low cost.",
+    image: "/zuno-cover.png",
+    technologies: ["Next.js", "NestJS", "PostgreSQL", "Payments APIs"],
+    category: "Payments",
+    github: "",
+    live: "",
+    role: "CTO",
+    comingsoon: true,
   },
   {
     id: 6,
-    name: "OTT Platform",
-    description:
-      "Video streaming platform with user authentication, subscription management, and content recommendations.",
-    image: "/video-streaming-platform-dark-ui.jpg",
-    technologies: ["Next.js", "Node.js", "MongoDB", "Stripe"],
-    category: "Web Apps",
-    github: "https://github.com",
-    live: "https://example.com",
-    role: "Full Stack Developer",
-        comingsoon : true
-
+    name: "Yozo Club",
+    description: "Booking app for clubs, events and experiences.",
+    image: "/yozo-cover.png",
+    technologies: ["React Native", "Next.js", "Node.js"],
+    category: "Booking",
+    github: "",
+    live: "",
+    role: "Full Stack",
+    comingsoon: true,
   },
-
- {
-  id: 7,
-  name: "Restaurant Billing & Token Printing System",
-  description:
-    "A local restaurant billing system that stores orders in MongoDB and automatically prints order tokens using a thermal printer via ESC/POS USB integration when an order is placed.",
-  image: "/reasturant.png",
-  technologies: [
-    "Next.js",
-    "Node.js",
-    "Express",
-    "MongoDB",
-    "ESC/POS",
-    "escpos-usb",
-    "Thermal Printer"
-  ],
-  category: "Web Apps",
-  github: "https://github.com",
-  live: "",
-  role: "Full Stack Developer",
-}
-
-
-  
 ]
 
 export const skills = {
   frontend: [
     { name: "React", level: 95 },
-    { name: "Next.js", level: 90 },
-    { name: "TypeScript", level: 85 },
+    { name: "Next.js", level: 95 },
+    { name: "TypeScript", level: 90 },
     { name: "Tailwind CSS", level: 95 },
     { name: "Framer Motion", level: 80 },
   ],
   backend: [
     { name: "Node.js", level: 90 },
-    { name: "Express", level: 90 },
+    { name: "NestJS", level: 85 },
+    { name: "Python", level: 80 },
+    { name: "FastAPI", level: 80 },
+    { name: "LLM / RAG", level: 80 },
     { name: "Socket.IO", level: 85 },
-    { name: "REST APIs", level: 95 },
-    { name: "GraphQL", level: 70 },
   ],
   databases: [
+    { name: "PostgreSQL", level: 85 },
     { name: "MongoDB", level: 90 },
-    { name: "PostgreSQL", level: 75 },
-    { name: "Redis", level: 70 },
-    { name: "Firebase", level: 80 },
+    { name: "Prisma", level: 85 },
+    { name: "Redis", level: 75 },
   ],
   devops: [
-    { name: "Git", level: 95 },
-    { name: "Docker", level: 70 },
-    { name: "AWS", level: 65 },
+    { name: "Docker", level: 80 },
+    { name: "GCP / Cloud Run", level: 75 },
+    { name: "CI/CD", level: 80 },
     { name: "Vercel", level: 90 },
-    { name: "CI/CD", level: 75 },
+    { name: "Git", level: 95 },
   ],
   tools: [
-    { name: "VS Code", level: 95 },
-    { name: "Figma", level: 75 },
+    { name: "Claude Code", level: 95 },
+    { name: "Turborepo", level: 80 },
+    { name: "k6", level: 70 },
     { name: "Postman", level: 90 },
-    { name: "Jira", level: 80 },
+    { name: "Figma", level: 75 },
   ],
 }
 
