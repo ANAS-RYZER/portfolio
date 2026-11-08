@@ -1,49 +1,24 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Syne } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { ThemeProvider } from "@/components/theme-provider"
-import ElectricCursor from "@/components/nurui/electric-cursor"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const body = Inter({ subsets: ["latin"], variable: "--font-body" })
+const display = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display-face" })
 
 export const metadata: Metadata = {
-  title: "Anas Mohamad | Full Stack Developer | Portfolio ",
-  description: "Full Stack Developer specializing in MERN Stack, Next.js, Real-time Applications, and API Integrations",
-  icons: {
-    icon: [
-      {
-        url: "/icon.svg",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon.svg",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml" ,
-      }, 
-    ],
-    apple: "/icon.svg",
-  },
+  title: "Mohamad Anas | CTO at Ryzer X",
+  description: "Full Stack Developer specializing in MERN Stack, Next.js, real-time applications, and API integrations",
+  icons: { icon: "/icon.svg", apple: "/icon.svg" },
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
-        <ThemeProvider>
-          {children}
-          <ElectricCursor />
-          <Analytics />
-        </ThemeProvider>
+    <html lang="en" className={`${body.variable} ${display.variable}`}>
+      <body className="grain font-sans antialiased">
+        {children}
+        <Analytics />
       </body>
     </html>
   )
